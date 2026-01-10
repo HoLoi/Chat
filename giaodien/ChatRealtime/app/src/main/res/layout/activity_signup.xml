@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:background="@drawable/bg_profile"
+    android:padding="10dp"
+    android:weightSum="10"
+    android:id="@+id/main">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:orientation="horizontal"
+        android:layout_weight="1"
+        android:weightSum="5">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Đăng Ký"
+            android:textSize="35sp"
+            android:textColor="#000000"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:layout_weight="3"/>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Đăng nhập"
+            android:textSize="18sp"
+            android:textColor="#9E9D9D"
+            android:textStyle="bold"
+            android:layout_gravity="bottom|right"
+            android:gravity="center"
+            android:layout_weight="2"
+            android:id="@+id/tv_dangnhap"/>
+    </LinearLayout>
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:src="@drawable/logo_chat"
+        android:layout_gravity="center"
+        android:layout_weight="4"/>
+
+    <ProgressBar
+        android:id="@+id/progressBarSignup"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:layout_gravity="center" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="4"
+        android:weightSum="3"
+        android:layout_marginTop="5dp"
+        android:orientation="vertical">
+
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/textInputLayout_singup"
+            android:hint="E-Mail"
+            app:startIconDrawable="@drawable/ic_email"
+            android:id="@+id/textInputLayoutEmail">
+
+            <com.google.android.material.textfield.TextInputEditText
+                style="@style/textInputEditText_singup"
+                android:id="@+id/textInputEditTextEmail"/>
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/textInputLayout_singup"
+            android:hint="Mật Khẩu"
+            app:startIconDrawable="@drawable/ic_password_signup"
+            app:passwordToggleEnabled="true"
+            app:endIconMode="password_toggle"
+            android:id="@+id/textInputLayoutMatkhau">
+
+            <com.google.android.material.textfield.TextInputEditText
+                style="@style/textInputEditText_singup"
+                android:id="@+id/textInputEditTextMatkhau"/>
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/textInputLayout_singup"
+            android:hint="Xác Nhận Mật Khẩu"
+            app:startIconDrawable="@drawable/ic_password_signup"
+            app:passwordToggleEnabled="true"
+            app:endIconMode="password_toggle"
+            android:id="@+id/textInputLayoutXnMatkhau">
+
+            <com.google.android.material.textfield.TextInputEditText
+                style="@style/textInputEditText_singup"
+                android:id="@+id/textInputEditTextXnMatkhau"
+                android:inputType="textPassword" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginBottom="15dp">
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="ĐĂNG KÝ"
+            android:textSize="20sp"
+            android:textColor="#ffffff"
+            android:textStyle="bold"
+            android:backgroundTint="#B0AFEF"
+            android:layout_marginLeft="30dp"
+            android:layout_marginRight="30dp"
+            android:layout_marginBottom="10dp"
+            android:layout_weight="1"
+            android:id="@+id/btnDangky"/>
+
+    </LinearLayout>
+
+
+</LinearLayout>

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:background="#ffffff">
+
+<!--    fragment_friends-->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/background_main"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="50dp"
+            android:layout_height="match_parent"
+            android:src="@drawable/ic_search"/>
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Tìm kiếm"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="2">
+
+        <Button
+            android:id="@+id/btn_banbe"
+            style="@style/btn_friends"
+            android:text="Bạn bè"/>
+
+        <Button
+            android:id="@+id/btn_nhom"
+            style="@style/btn_friends"
+            android:text="Nhóm"/>
+
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/btn_loi_moi_ket_ban"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="10dp"
+        android:layout_marginLeft="10dp"
+        android:text="Lời mời kết bạn"
+        android:backgroundTint="#2196F3"
+        android:textColor="@color/white"
+        android:visibility="gone"
+        />
+
+    <Button
+        android:id="@+id/btn_them_ban_be"
+        android:text="+ Thêm bạn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="10dp"
+        android:layout_marginLeft="10dp"
+        android:backgroundTint="#2196F3"
+        android:textColor="@color/white"
+        android:visibility="gone" />
+
+    <!-- ListView hiển thị nội dung -->
+    <ListView
+        android:id="@+id/list_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="10dp" />
+
+
+</LinearLayout>

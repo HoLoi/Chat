@@ -1,0 +1,380 @@
+package com.example.chatrealtime.activity.NavigationBar.ChildActivity;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.lifecycle.Observer;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.android.volley.Request;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+import com.example.chatrealtime.Constants;
+import com.example.chatrealtime.R;
+import com.example.chatrealtime.adapter.MessageAdapter;
+import com.example.chatrealtime.database.ChatDatabaseHelper;
+import com.example.chatrealtime.model.Message;
+import com.example.chatrealtime.model.SessionManager;
+import com.example.chatrealtime.model.WebSocketService;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class ChatActivity extends AppCompatActivity {
+
+    public static int CURRENT_OPEN_ROOM = -1;
+
+    private RecyclerView recyclerMessages;
+    private TextView txtNameChat;
+    private EditText edtMessage;
+    private Button btnSend;
+    private ImageView btnBack, btnMenu;
+
+    private MessageAdapter adapter;
+    private final List<Message> messageList = new ArrayList<>();
+
+    private SessionManager session;
+    private int roomId;
+    private int maTaiKhoan;
+    private String roomName;
+    private ChatDatabaseHelper dbHelper;
+
+    private static final String BASE_URL = Constants.BASE_URL;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_chat);
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
+
+        initViews();
+        initSession();
+        setupRecyclerView();
+
+        dbHelper = new ChatDatabaseHelper(this);
+
+        // Load tin nhắn OFFLINE
+        List<Message> offlineMessages = dbHelper.getMessages(roomId, maTaiKhoan);
+        if (!offlineMessages.isEmpty()) {
+            adapter.addMessages(offlineMessages);
+            recyclerMessages.scrollToPosition(adapter.getItemCount() - 1);
+        }
+
+        roomId = getIntent().getIntExtra("maPhong", -1);
+        if (roomId == -1) {
+            Toast.makeText(this, "Không tìm thấy phòng chat", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        roomName = getIntent().getStringExtra("roomName");
+        txtNameChat.setText(roomName);
+
+        CURRENT_OPEN_ROOM = roomId;
+
+        loadMessages();
+        setupWebSocket();
+        setupActions();
+    }
+
+    private void initViews() {
+        txtNameChat = findViewById(R.id.tv_NameChat);
+        recyclerMessages = findViewById(R.id.recyclerMessages);
+        edtMessage = findViewById(R.id.edtMessage);
+        btnSend = findViewById(R.id.btnSend);
+        btnBack = findViewById(R.id.btnback);
+        btnMenu = findViewById(R.id.iv_menu);
+    }
+
+    private void initSession() {
+        session = new SessionManager(this);
+        maTaiKhoan = session.getMaTaiKhoan();
+    }
+
+    private void setupRecyclerView() {
+        adapter = new MessageAdapter(this, messageList);
+        recyclerMessages.setLayoutManager(new LinearLayoutManager(this));
+        recyclerMessages.setAdapter(adapter);
+    }
+
+    /**
+     * ✅ Kết nối WebSocket và join phòng
+     */
+    private void setupWebSocket() {
+        WebSocketService ws = WebSocketService.getInstance();
+
+        if (!ws.isConnected()) {
+            ws.connect(Constants.WEBSOCKET_URL, maTaiKhoan);
+        }
+
+        // 🔹 Join room sau khi kết nối
+        try {
+            JSONObject join = new JSONObject();
+            join.put("type", "join_room");
+            join.put("userId", maTaiKhoan);
+            join.put("roomId", roomId);
+            ws.sendJson(join);
+            Log.d("WS_JOIN", "🏠 Joined room " + roomId);
+        } catch (Exception e) {
+            Log.e("WS_JOIN_ERR", "❌ Lỗi join phòng: " + e.getMessage());
+        }
+
+        // 🔹 Lắng nghe tin nhắn realtime
+        ws.getMessageLiveData().observe(this, newMessageObserver());
+    }
+
+    /**
+     * ✅ Gắn sự kiện click cho các nút
+     */
+    private void setupActions() {
+        btnSend.setOnClickListener(v -> {
+            String msg = edtMessage.getText().toString().trim();
+            if (!msg.isEmpty()) {
+                sendMessage(msg);
+            }
+        });
+
+        btnBack.setOnClickListener(v -> {
+            finish();
+            overridePendingTransition(android.R.anim.slide_in_left, android.R.anim.slide_out_right);
+        });
+
+        btnMenu.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.e("OPEN_MENU", " Mở menu chat cho phòng " + roomId);
+                Intent intent = new Intent(ChatActivity.this, MenuChatActivity.class);
+                intent.putExtra("maPhong", roomId);
+                intent.putExtra("roomName", roomName);
+                startActivity(intent);
+                overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
+            }
+        });
+    }
+
+    /**
+     * ✅ Gửi tin nhắn qua WebSocket và lưu DB
+     */
+    private void sendMessage(String msg) {
+        try {
+            JSONObject json = new JSONObject();
+            json.put("type", "chat_message");
+            json.put("maTaiKhoanGui", maTaiKhoan);
+            json.put("maPhongChat", roomId);
+            json.put("noiDung", msg);
+            json.put("loaiTinNhan", "text");
+
+            Log.d("SEND_WS", "➡️ Gửi WS tin nhắn: " + json);
+
+            // Gửi qua WebSocket (realtime)
+            WebSocketService.getInstance().sendJson(json);
+
+            // Hiển thị ngay trên UI
+            adapter.addMessage(new Message(msg, true, maTaiKhoan));
+            recyclerMessages.scrollToPosition(adapter.getItemCount() - 1);
+            edtMessage.setText("");
+
+            // LƯU TIN NHẮN GỬI ĐI VÀO SQLITE
+            dbHelper.addMessage(roomId, maTaiKhoan, msg);
+
+            // Lưu vào DB qua API
+            sendMessageApi(json);
+        } catch (Exception e) {
+            Log.e("SEND_MSG_ERR", "❌ Lỗi gửi tin nhắn: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * ✅ Gửi request POST để lưu tin nhắn vào MySQL
+     */
+    private void sendMessageApi(JSONObject messageJson) {
+        String url = BASE_URL + "chat/send-message";
+        Log.d("SEND_API", "🟩 Gửi request lưu DB tới: " + url);
+
+        StringRequest req = new StringRequest(Request.Method.POST, url,
+                response -> {
+                    Log.d("SEND_API", "✅ Phản hồi từ server: " + response);
+                    try {
+                        JSONObject obj = new JSONObject(response.trim());
+                        if (!"success".equals(obj.optString("status"))) {
+                            Log.e("SEND_API_FAIL", "❌ Server báo lỗi: " + obj.optString("message"));
+                        }
+                    } catch (Exception e) {
+                        Log.e("SEND_API_PARSE", "❌ Lỗi phân tích phản hồi: " + e.getMessage());
+                    }
+                },
+                error -> Log.e("SEND_API_ERR", "❌ Lỗi khi lưu DB: " + error.toString())
+        ) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                try {
+                    params.put("maPhongChat", String.valueOf(messageJson.getInt("maPhongChat")));
+                    params.put("maTaiKhoanGui", String.valueOf(messageJson.getInt("maTaiKhoanGui")));
+                    params.put("noiDung", messageJson.getString("noiDung"));
+                    params.put("loaiTinNhan", messageJson.optString("loaiTinNhan", "text"));
+                    Log.d("SEND_API_PARAMS", "📦 Params gửi đi: " + params);
+                } catch (Exception e) {
+                    Log.e("PARAM_ERR", "❌ Lỗi tạo params: " + e.getMessage());
+                }
+                return params;
+            }
+
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Authorization", "Bearer " + session.getToken());
+                return headers;
+            }
+        };
+
+        Volley.newRequestQueue(this).add(req);
+    }
+
+    /**
+     * ✅ Tải lịch sử tin nhắn của phòng
+     */
+    private void loadMessages() {
+        //String url = BASE_URL + "get_messages.php?maPhongChat=" + roomId + "&maTaiKhoan=" + maTaiKhoan;
+        String url = BASE_URL + "chat/messages"
+                + "?maPhongChat=" + roomId
+                + "&maTaiKhoan=" + maTaiKhoan;
+
+        Log.d("LOAD_MSG", "📥 Tải tin nhắn từ: " + url);
+
+        StringRequest req = new StringRequest(Request.Method.GET, url,
+                response -> {
+                    try {
+                        JSONObject obj = new JSONObject(response.trim());
+                        Log.d("LOAD_MSG_RES", "✅ Phản hồi tin nhắn: " + obj);
+
+                        if ("success".equals(obj.optString("status"))) {
+                            JSONArray arr = obj.optJSONArray("messages");
+                            List<Message> tmp = new ArrayList<>();
+                            for (int i = 0; i < arr.length(); i++) {
+                                JSONObject item = arr.getJSONObject(i);
+                                String noiDung = item.optString("noiDung", "");
+                                int maGui = item.optInt("maTaiKhoanGui", -1);
+                                boolean isMine = (maGui == maTaiKhoan);
+                                tmp.add(new Message(noiDung, isMine, maGui));
+                            }
+                            adapter.addMessages(tmp);
+                            recyclerMessages.scrollToPosition(adapter.getItemCount() - 1);
+
+                            // QUAN TRỌNG: Lưu danh sách chuẩn từ Server vào SQLite
+                            dbHelper.saveMessages(roomId, tmp);
+                        } else {
+                            //Toast.makeText(this, obj.optString("message"), Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (Exception e) {
+                        Log.e("LOAD_MSG_ERR", "❌ Lỗi đọc phản hồi: " + e.getMessage());
+                    }
+                },
+                error -> Log.e("LOAD_MSG_ERR", "❌ Lỗi tải tin nhắn: " + error.toString())
+        ) {
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> h = new HashMap<>();
+                h.put("Authorization", "Bearer " + session.getToken());
+                return h;
+            }
+        };
+        Volley.newRequestQueue(this).add(req);
+    }
+
+    /**
+     * ✅ Nhận tin nhắn realtime qua WebSocket
+     */
+    private Observer<String> newMessageObserver() {
+        return text -> {
+            try {
+                JSONObject obj = new JSONObject(text.trim());
+                if (!"chat_message".equals(obj.optString("type"))) return;
+
+                int maPhongChat = obj.optInt("maPhongChat", -1);
+                if (maPhongChat != roomId) return;
+
+                int maGui = obj.optInt("maTaiKhoanGui", -1);
+
+                if (maGui == maTaiKhoan) {
+                    Log.d("WS_SKIP", "⏭ Bỏ qua tin nhắn của chính mình.");
+                    return;
+                }
+
+                String noiDung = obj.optString("noiDung", "");
+                boolean isMine = (maGui == maTaiKhoan);
+
+                Log.d("WS_NEW_MSG", "💬 Tin nhắn realtime: " + noiDung + " | Từ: " + maGui);
+
+                adapter.addMessage(new Message(noiDung, isMine, maGui));
+                recyclerMessages.scrollToPosition(adapter.getItemCount() - 1);
+
+                // LƯU TIN NHẮN ĐẾN VÀO SQLITE
+                dbHelper.addMessage(roomId, maGui, noiDung);
+
+                // QUAN TRỌNG: Báo Server là ĐÃ ĐỌC ngay lập tức
+                markAsReadImmediately(roomId);
+
+            } catch (Exception e) {
+                Log.e("WS_MSG_ERR", "❌ Lỗi nhận tin realtime: " + e.getMessage());
+            }
+        };
+    }
+
+    /**
+     * Gọi API đánh dấu đã đọc ngay lập tức cho 1 tin nhắn cụ thể hoặc cả phòng
+     */
+    private void markAsReadImmediately(int maPhong) {
+        String url = Constants.BASE_URL + "mark_read.php";
+
+        StringRequest request = new StringRequest(Request.Method.POST, url,
+                response -> Log.d("MARK_READ", "✅ Đã đánh dấu đọc tin mới"),
+                error -> Log.e("MARK_READ", "❌ Lỗi đánh dấu đọc: " + error.toString())
+        ) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                params.put("maPhongChat", String.valueOf(maPhong));
+                return params;
+            }
+
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Authorization", "Bearer " + session.getToken());
+                return headers;
+            }
+        };
+
+        // Thêm vào hàng đợi gửi đi ngay
+        Volley.newRequestQueue(this).add(request);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        CURRENT_OPEN_ROOM = -1;
+    }
+}

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    android:orientation="vertical"
+    android:weightSum="16"
+    android:padding="10dp"
+    android:id="@+id/main">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:layout_marginTop="10dp"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:text="Talky"
+        android:textSize="50sp"
+        android:textStyle="bold"
+        android:layout_weight="2"/>
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:src="@drawable/logo_chat"
+        android:layout_marginTop="50dp"
+        android:layout_marginBottom="50dp"
+        android:layout_weight="10"/>
+
+    <Button
+        android:id="@+id/btn_signup"
+        style="@style/btn_Main"
+        android:text="TẠO TÀI KHOẢN"
+        android:backgroundTint="#6174B4"/>
+
+    <Button
+        android:id="@+id/btn_signin"
+        style="@style/btn_Main"
+        android:text="ĐĂNG NHẬP"
+        android:backgroundTint="#AA9CCA"/>
+
+</LinearLayout>

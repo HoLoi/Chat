@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@drawable/bg_profile"
+    android:id="@+id/main">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="10dp"
+        android:weightSum="7">
+
+        <ImageView
+            android:id="@+id/btn_back_informationI"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:src="@drawable/ic_arrow_back"
+            android:layout_gravity="center"/>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="5"
+            android:gravity="center"
+            android:text="Thông tin người dùng"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_gravity="center"/>
+
+        <ImageView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#FFFFFF"
+        android:layout_marginTop="125dp"
+        android:orientation="vertical"
+        android:padding="10dp">
+
+        <LinearLayout
+            style="@style/linNearLayout_Information"
+            android:layout_marginTop="70dp">
+            <TextView
+                style="@style/tv_Information"
+                android:text="Họ tên"/>
+            <EditText
+                style="@style/edt_Information"
+                android:background="@null"
+                android:hint="Nhập họ tên"
+                android:id="@+id/edt_hotenI"/>
+        </LinearLayout>
+
+        <LinearLayout
+            style="@style/linNearLayout_Information">
+            <TextView
+                style="@style/tv_Information"
+                android:text="Số di động"/>
+            <EditText
+                style="@style/edt_Information"
+                android:background="@null"
+                android:inputType="phone"
+                android:hint="Nhập di động"
+                android:id="@+id/edt_didongI"/>
+        </LinearLayout>
+
+        <LinearLayout
+            style="@style/linNearLayout_Information">
+            <TextView
+                style="@style/tv_Information"
+                android:text="Ngày sinh"/>
+            <EditText
+                android:id="@+id/edtNgaySinhI"
+                style="@style/edt_Information"
+                android:background="@null"
+                android:hint="Chọn ngày sinh"
+                android:focusable="false"
+                android:inputType="none"
+                android:drawablePadding="8dp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            style="@style/linNearLayout_Information">
+            <TextView
+                style="@style/tv_Information"
+                android:text="Giới tính"/>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="2">
+                <RadioGroup
+                    android:id="@+id/radioGroupGioiTinhI"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:weightSum="2">
+
+                    <RadioButton
+                        android:id="@+id/radioBtnNamI"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Nam"
+                        android:layout_weight="1"/>
+                    <RadioButton
+                        android:id="@+id/radioBtnNuI"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Nữ"
+                        android:layout_weight="1"/>
+
+                </RadioGroup>
+            </LinearLayout>
+        </LinearLayout>
+
+
+        <Button
+            android:id="@+id/btn_capnhat_information"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="#2196F3"
+            android:text="Cập Nhật"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:padding="10dp"
+            android:layout_margin="20dp"
+            android:layout_gravity="center"/>
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_gravity="center|top"
+        android:layout_marginTop="70dp">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center|top"
+            android:src="@drawable/avatar_default"
+            android:scaleType="centerCrop"
+            app:shapeAppearanceOverlay="@style/CircularImage"
+            android:id="@+id/imageviewavatarI"/>
+
+        <ImageView
+            android:id="@+id/imageviewEditavatarI"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:src="@drawable/ic_edit"
+            android:layout_gravity="end|bottom"/>
+
+    </FrameLayout>
+
+</FrameLayout>

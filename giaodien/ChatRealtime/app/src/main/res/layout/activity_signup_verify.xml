@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="24dp"
+    android:background="@color/white"
+    tools:context=".activity.SignupVerifyActivity">
+
+    <!-- Icon minh họa OTP -->
+    <ImageView
+        android:layout_width="96dp"
+        android:layout_height="96dp"
+        android:src="@drawable/otp"
+        android:contentDescription="OTP Illustration"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Tiêu đề -->
+    <TextView
+        android:id="@+id/tvTitle"
+        android:text="Xác minh tài khoản"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:textColor="@color/black"
+        android:layout_marginBottom="8dp"
+        android:gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <!-- Hướng dẫn -->
+    <TextView
+        android:id="@+id/tvInstruction"
+        android:text="Nhập mã OTP đã được gửi đến email của bạn."
+        android:textSize="16sp"
+        android:textColor="@color/dark_gray"
+        android:gravity="center"
+        android:layout_marginBottom="24dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <ProgressBar
+        android:id="@+id/progressBarVerify"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:layout_gravity="center" />
+
+    <!-- 6 ô nhập OTP -->
+    <LinearLayout
+        android:id="@+id/otpLayout"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="32dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <EditText
+            android:id="@+id/otp1"
+            android:layout_width="48dp"
+            android:layout_height="56dp"
+            android:layout_margin="6dp"
+            android:gravity="center"
+            android:background="@drawable/otp_box"
+            android:inputType="number"
+            android:maxLength="1"
+            android:textSize="20sp" />
+
+        <EditText
+            android:id="@+id/otp2"
+            android:layout_width="48dp"
+            android:layout_height="56dp"
+            android:layout_margin="6dp"
+            android:gravity="center"
+            android:background="@drawable/otp_box"
+            android:inputType="number"
+            android:maxLength="1"
+            android:textSize="20sp" />
+
+        <EditText
+            android:id="@+id/otp3"
+            android:layout_width="48dp"
+            android:layout_height="56dp"
+            android:layout_margin="6dp"
+            android:gravity="center"
+            android:background="@drawable/otp_box"
+            android:inputType="number"
+            android:maxLength="1"
+            android:textSize="20sp" />
+
+        <EditText
+            android:id="@+id/otp4"
+            android:layout_width="48dp"
+            android:layout_height="56dp"
+            android:layout_margin="6dp"
+            android:gravity="center"
+            android:background="@drawable/otp_box"
+            android:inputType="number"
+            android:maxLength="1"
+            android:textSize="20sp" />
+
+        <EditText
+            android:id="@+id/otp5"
+            android:layout_width="48dp"
+            android:layout_height="56dp"
+            android:layout_margin="6dp"
+            android:gravity="center"
+            android:background="@drawable/otp_box"
+            android:inputType="number"
+            android:maxLength="1"
+            android:textSize="20sp" />
+
+        <EditText
+            android:id="@+id/otp6"
+            android:layout_width="48dp"
+            android:layout_height="56dp"
+            android:layout_margin="6dp"
+            android:gravity="center"
+            android:background="@drawable/otp_box"
+            android:inputType="number"
+            android:maxLength="1"
+            android:textSize="20sp" />
+    </LinearLayout>
+
+    <!-- Nút xác minh -->
+    <Button
+        android:id="@+id/btnVerify"
+        android:text="Xác Minh"
+        android:textAllCaps="false"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:backgroundTint="#2196F3"
+        android:textColor="@color/white"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Gửi lại mã -->
+    <TextView
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:id="@+id/tvResend"
+        android:text="Gửi lại mã?"
+        android:textColor="@color/purple_700"
+        android:textStyle="bold"
+        android:layout_gravity="center"
+        android:clickable="true"
+        android:focusable="true" />
+</LinearLayout>
+
+
+    <!--<?xml version="1.0" encoding="utf-8"?>-->
+<!--<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"-->
+<!--    android:orientation="vertical"-->
+<!--    android:padding="20dp"-->
+<!--    android:layout_width="match_parent"-->
+<!--    android:layout_height="match_parent"-->
+<!--    android:id="@+id/main">-->
+
+<!--    <EditText-->
+<!--        android:id="@+id/edtOtp"-->
+<!--        android:hint="Nhập OTP"-->
+<!--        android:inputType="number"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"/>-->
+
+<!--    <Button-->
+<!--        android:id="@+id/btnVerify"-->
+<!--        android:text="Xác minh"-->
+<!--        android:textSize="20sp"-->
+<!--        android:textStyle="bold"-->
+<!--        android:backgroundTint="#2196F3"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"/>-->
+
+<!--</LinearLayout>-->

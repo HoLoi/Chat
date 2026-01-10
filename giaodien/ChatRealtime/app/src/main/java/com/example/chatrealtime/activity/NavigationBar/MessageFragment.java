@@ -1,0 +1,354 @@
+package com.example.chatrealtime.activity.NavigationBar;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.*;
+import android.widget.*;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+
+import com.android.volley.*;
+import com.android.volley.toolbox.*;
+import com.example.chatrealtime.Constants;
+import com.example.chatrealtime.R;
+import com.example.chatrealtime.activity.NavigationBar.ChildActivity.ChatActivity;
+import com.example.chatrealtime.adapter.RoomAdapter;
+import com.example.chatrealtime.database.ChatDatabaseHelper;
+import com.example.chatrealtime.model.*;
+import org.json.*;
+
+import java.util.*;
+
+public class MessageFragment extends Fragment {
+
+    private ListView listViewPhongchat;
+    private RoomAdapter roomAdapter;
+    private List<Room> roomList;
+    private ChatDatabaseHelper dbHelper;
+
+    private static final String TAG = "MessageFragment";
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+
+        View root = inflater.inflate(R.layout.fragment_message, container, false);
+
+        listViewPhongchat = root.findViewById(R.id.lv_phongchat);
+        roomList = new ArrayList<>();
+        roomAdapter = new RoomAdapter(requireContext(), roomList);
+        listViewPhongchat.setAdapter(roomAdapter);
+
+        SessionManager session = new SessionManager(requireContext());
+        int maTaiKhoan = session.getMaTaiKhoan();
+
+        // Khởi tạo Database Helper
+        dbHelper = new ChatDatabaseHelper(requireContext());
+
+        // BƯỚC 1: Load dữ liệu OFFLINE từ SQLite trước (Hiển thị ngay lập tức)
+        List<Room> offlineRooms = dbHelper.getRooms();
+        if (!offlineRooms.isEmpty()) {
+            roomList.clear();
+            roomList.addAll(offlineRooms);
+            roomAdapter.notifyDataSetChanged();
+        }
+
+        // BƯỚC 2: Gọi API lấy dữ liệu mới nhất
+        loadRoomsFromApi();
+
+        // Kết nối WebSocket
+        WebSocketService ws = WebSocketService.getInstance();
+        if (!ws.isConnected()) {
+            ws.connect(Constants.WEBSOCKET_URL, maTaiKhoan);
+        }
+
+        // Nhận realtime
+        ws.getMessageLiveData().observe(getViewLifecycleOwner(), message -> {
+            try {
+                JSONObject obj = new JSONObject(message);
+                if (!"chat_message".equals(obj.optString("type"))) return;
+
+                int maPhong = obj.optInt("maPhongChat", -1);
+                String noiDung = obj.optString("noiDung", "");
+
+                // Lấy ID người gửi để biết có nên tăng số tin nhắn chưa đọc hay không
+                int senderId = obj.optInt("maTaiKhoanGui", -1);
+
+                updateRoomWithNewMessage(maPhong, noiDung, senderId);
+            } catch (Exception e) {
+                Log.e(TAG, "Parse realtime message error: " + e.getMessage());
+            }
+        });
+
+        // Khi click phòng → mở ChatActivity
+        listViewPhongchat.setOnItemClickListener((parent, view, position, id) -> {
+            Room room = roomList.get(position);
+
+            // 1. Reset số tin chưa đọc về 0 trong Model (Local)
+            room.resetUnread();
+
+            // 2. Cập nhật giao diện Adapter để mất số màu đỏ ngay lập tức
+            roomAdapter.notifyDataSetChanged();
+
+            // (MỚI) 3. Gọi API báo cho Server biết đã đọc tin
+            markAsReadOnServer(room.getId());
+
+            // 4. Mở màn hình ChatActivity
+            Intent intent = new Intent(requireContext(), ChatActivity.class);
+            intent.putExtra("maPhong", room.getId());
+            intent.putExtra("roomName", room.getName()); // Nên truyền thêm tên phòng
+            startActivity(intent);
+        });
+
+        listViewPhongchat.setOnItemLongClickListener((parent, view, position, id) -> {
+            Room room = roomList.get(position);
+
+            // Tạo PopupMenu
+            PopupMenu popup = new PopupMenu(requireContext(), view);
+            popup.getMenuInflater().inflate(R.menu.room_options_menu, popup.getMenu());
+
+            // Xử lý click menu
+            popup.setOnMenuItemClickListener(item -> {
+                int itemId = item.getItemId();
+                if (itemId == R.id.action_delete_room) {
+                    // Xóa phòng chat
+                    confirmAndDeleteRoom(room);
+                    return true;
+                } else if (itemId == R.id.action_unfriend) {
+                    // Hủy kết bạn với người trong phòng 1-1
+                    //confirmAndUnfriend(room);
+                    return true;
+                }
+                return false;
+            });
+
+            popup.show();
+            return true; // Tránh sự kiện click bình thường
+        });
+
+
+        return root;
+    }
+
+    // Hiển thị hộp thoại xác nhận trước khi xóa
+    private void confirmAndDeleteRoom(Room room) {
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle("Xóa cuộc trò chuyện")
+                .setMessage("Bạn có chắc chắn muốn xóa cuộc trò chuyện với " + room.getName() + " không?\nHành động này không thể hoàn tác.")
+                .setPositiveButton("Xóa", (dialog, which) -> {
+                    // Gọi hàm xóa thật sự
+                    executeDeleteRoom(room);
+                })
+                .setNegativeButton("Hủy", null)
+                .show();
+    }
+
+    // Gọi API xóa phòng và cập nhật giao diện + SQLite
+    private void executeDeleteRoom(Room room) {
+        String url = Constants.BASE_URL + "chat/delete-room";
+        SessionManager session = new SessionManager(requireContext());
+        String token = session.getToken();
+        int maTaiKhoan = session.getMaTaiKhoan();
+
+        // Hiển thị loading nhẹ (nếu muốn)
+        // ProgressDialog pd = new ProgressDialog(requireContext());
+        // pd.setMessage("Đang xóa...");
+        // pd.show();
+
+        StringRequest request = new StringRequest(Request.Method.POST, url,
+                response -> {
+                    // if (pd.isShowing()) pd.dismiss();
+                    try {
+                        JSONObject jsonObject = new JSONObject(response);
+                        String status = jsonObject.getString("status");
+
+                        if (status.equals("success")) {
+                            // 1. Xóa khỏi danh sách hiển thị (RAM)
+                            roomList.remove(room);
+                            roomAdapter.notifyDataSetChanged();
+
+                            // 2. Xóa khỏi SQLite (Offline)
+                            if (dbHelper != null) {
+                                dbHelper.deleteRoom(room.getId());
+                            }
+
+                            Toast.makeText(requireContext(), "Đã xóa cuộc trò chuyện", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(requireContext(), "Lỗi: " + jsonObject.getString("message"), Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Lỗi parse JSON xóa phòng: " + e.getMessage());
+                    }
+                },
+                error -> {
+                    // if (pd.isShowing()) pd.dismiss();
+                    Log.e(TAG, "Lỗi API xóa phòng: " + error.toString());
+                    Toast.makeText(requireContext(), "Lỗi kết nối server", Toast.LENGTH_SHORT).show();
+                }
+        ) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                // Gửi ID phòng cần xóa
+                params.put("maPhongChat", String.valueOf(room.getId()));
+                // Gửi ID người xóa để server kiểm tra quyền (nếu cần)
+                params.put("maTaiKhoan", String.valueOf(maTaiKhoan));
+                return params;
+            }
+
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Authorization", "Bearer " + token);
+                return headers;
+            }
+        };
+
+        Volley.newRequestQueue(requireContext()).add(request);
+    }
+
+    // Cập nhật tin nhắn mới trong danh sách phòng
+    private void updateRoomWithNewMessage(int maPhong, String noiDung, int senderId) {
+        SessionManager session = new SessionManager(requireContext());
+        int myId = session.getMaTaiKhoan();
+
+        boolean found = false;
+        for (int i = 0; i < roomList.size(); i++) {
+            // Cập nhật nội dung tin nhắn cuối
+            Room r = roomList.get(i);
+
+            if (r.getId() == maPhong) {
+                r.setLastMessage(noiDung);
+
+                // LOGIC QUYẾT ĐỊNH HIỆN THỊ TIN NHẮN CHƯA ĐỌC:
+                // 1. Người gửi KHÔNG PHẢI là mình (senderId != myId)
+                // 2. Mình đang KHÔNG mở phòng chat đó (ChatActivity.CURRENT_OPEN_ROOM != maPhong)
+                if (senderId != myId && ChatActivity.CURRENT_OPEN_ROOM != maPhong) {
+                    r.incrementUnread();
+                }
+                // Đưa phòng lên đầu
+                Room top = roomList.remove(i);
+                roomList.add(0, top);
+
+                found = true;
+                break;
+            }
+        }
+
+        if (found) {
+            roomAdapter.notifyDataSetChanged(); // Cập nhật giao diện ngay lập tức
+        } else {
+            // Nếu chưa có → tải lại
+            loadRoomsFromApi();
+        }
+    }
+
+    // API lấy danh sách phòng chat
+    private void loadRoomsFromApi() {
+        SessionManager session = new SessionManager(requireContext());
+        int maTaiKhoan = session.getMaTaiKhoan();
+
+        String url = Constants.BASE_URL +  "chat/rooms?maTaiKhoan=" + maTaiKhoan;
+        Log.d(TAG, "📡 Gọi API: " + url);
+
+        String token = session.getToken();
+
+        RequestQueue queue = Volley.newRequestQueue(requireContext());
+
+        JsonObjectRequest request = new JsonObjectRequest(
+                Request.Method.GET,
+                url,
+                null,
+                response -> {
+                    try {
+                        Log.d(TAG, "Response: " + response);
+                        if (response.getString("status").equals("success")) {
+                            JSONArray rooms = response.getJSONArray("rooms");
+                            roomList.clear();
+                            for (int i = 0; i < rooms.length(); i++) {
+                                JSONObject r = rooms.getJSONObject(i);
+
+                                // Phải lấy đúng key "id" chứ không phải "maPhong"
+                                int id = r.optInt("id", -1);
+                                String name = r.optString("tenPhongChat", "Không rõ");
+                                String lastMsg = r.optString("lastMessage", "(Chưa có tin nhắn)");
+                                int unread = r.optInt("unreadCount", 0);
+                                String avatarUrl = r.optString("anhDaiDien_URL", "default_avatar.png");
+
+                                Room room = new Room(id, name, lastMsg, avatarUrl);
+                                room.setUnreadCount(unread);
+                                roomList.add(room);
+                            }
+                            roomAdapter.notifyDataSetChanged();
+                        } else {
+                            Toast.makeText(requireContext(),
+                                    response.optString("message", "Lỗi tải danh sách phòng"),
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Parse error: " + e.getMessage());
+                    }
+                },
+                error -> {
+                    Log.e(TAG, "API error: " + error);
+                    Toast.makeText(requireContext(), "Không tải được phòng chat", Toast.LENGTH_SHORT).show();
+                }
+        ) {
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> h = new HashMap<>();
+                h.put("Authorization", "Bearer " + token);
+                return h;
+            }
+        };
+
+        queue.add(request);
+    }
+
+    /**
+     * (MỚI) Gọi API để đánh dấu đã đọc trên Server
+     * Giúp khi load lại app không bị hiện lại số đỏ
+     */
+    private void markAsReadOnServer(int maPhong) {
+        SessionManager session = new SessionManager(requireContext());
+        String url = Constants.BASE_URL +  "chat/mark-read";
+
+        Log.d(TAG, "📡 Calling mark_read for room: " + maPhong);
+
+        StringRequest request = new StringRequest(Request.Method.POST, url,
+                response -> Log.d(TAG, "Server marked read: " + response),
+                error -> Log.e(TAG, "Error marking read: " + error.toString())
+        ) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                // Gửi mã phòng lên để server update trạng thái thành 'read'
+                params.put("maPhongChat", String.valueOf(maPhong));
+                params.put("maTaiKhoan", String.valueOf(session.getMaTaiKhoan()));
+                return params;
+            }
+
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                // Gửi token để server biết ai đang đọc
+                headers.put("Authorization", "Bearer " + session.getToken());
+                return headers;
+            }
+        };
+
+        // Thêm request vào hàng đợi
+        Volley.newRequestQueue(requireContext()).add(request);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Khi quay lại màn hình danh sách, load lại API để cập nhật số tin chưa đọc chính xác nhất
+        loadRoomsFromApi();
+    }
+}

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main"
+    android:background="@drawable/bg_profile">
+
+    <!-- Thanh tiêu đề -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="10dp"
+        android:weightSum="7">
+
+        <ImageView
+            android:id="@+id/btn_back_personal_page"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:src="@drawable/ic_arrow_back"
+            android:layout_gravity="center" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="5"
+            android:gravity="center"
+            android:text="Trang cá nhân"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_gravity="center" />
+
+        <ImageView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+    </LinearLayout>
+
+    <!-- Nội dung -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="125dp"
+        android:orientation="vertical"
+        android:background="#FFFFFF"
+        android:padding="10dp"
+        android:gravity="center|top">
+
+        <TextView
+            android:id="@+id/tv_ten_personal_page"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tên người dùng"
+            android:textSize="20sp"
+            android:textColor="#111111"
+            android:layout_marginTop="70dp" />
+
+        <Button
+            android:id="@+id/btn_ketban_personal_page"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:text="Kết bạn"
+            android:textSize="18sp"
+            android:backgroundTint="#2196F3"
+            android:layout_marginTop="100dp" />
+
+        <Button
+            android:id="@+id/btn_nhantin"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:text="Nhắn tin"
+            android:textSize="18sp"
+            android:backgroundTint="#2196F3"
+            android:layout_marginTop="20dp"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+    <!-- Ảnh đại diện -->
+    <FrameLayout
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_gravity="center|top"
+        android:layout_marginTop="70dp">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/imgAvatarFriend"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/avatar_default"
+            android:scaleType="centerCrop"
+            app:shapeAppearanceOverlay="@style/CircularImage" />
+    </FrameLayout>
+
+</FrameLayout>

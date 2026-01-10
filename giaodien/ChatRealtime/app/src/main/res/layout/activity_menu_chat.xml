@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:weightSum="15 "
+    android:orientation="vertical"
+    android:id="@+id/main">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:padding="10dp"
+        android:background="@drawable/background_main"
+        android:weightSum="12"
+        android:layout_weight="1">
+
+        <ImageView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="2"
+            android:src="@drawable/ic_back"
+            android:id="@+id/iv_back_menu_chat"/>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="10"
+            android:text="Tùy chọn"
+            android:textColor="@android:color/white"
+            android:textSize="20sp"
+            android:id="@+id/tv_title_menu_chat"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="7"
+        android:orientation="vertical">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:layout_gravity="center|top"
+            android:src="@drawable/avatar_default"
+            android:scaleType="centerCrop"
+            android:layout_marginTop="10dp"
+            app:shapeAppearanceOverlay="@style/CircularImage"
+            android:id="@+id/iv_menu_avatar"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Username"
+            android:textSize="18sp"
+            android:textColor="@android:color/black"
+            android:gravity="center"
+            android:id="@+id/tv_tenphong"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="30dp"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <LinearLayout
+                android:layout_width="60dp"
+                android:layout_height="100dp"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:id="@+id/lnlayout_trangcanhan">
+
+                <ImageView
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:src="@drawable/avatar_default"
+                    android:id="@+id/iv_call"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:text="Trang cá nhân"
+                    android:textSize="16sp"
+                    android:textColor="@android:color/black"
+                    android:gravity="center"
+                    android:id="@+id/tv_call"/>
+
+
+            </LinearLayout>
+
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="7"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="10dp">
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_delete"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Xóa cuộc trò chuyện"
+                android:textSize="18sp"
+                android:textColor="#FF0000"
+                android:layout_marginStart="10dp"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+</LinearLayout>

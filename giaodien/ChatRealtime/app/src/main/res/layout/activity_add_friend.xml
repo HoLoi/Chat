@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@drawable/bg_profile"
+    android:id="@+id/main">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="10dp"
+        android:weightSum="7">
+
+        <ImageView
+            android:id="@+id/iv_back_add_friend"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:src="@drawable/ic_arrow_back"
+            android:layout_gravity="center"/>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="5"
+            android:gravity="center"
+            android:text="Thêm bạn"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_gravity="center"/>
+
+        <ImageView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#FFFFFF"
+        android:layout_marginTop="125dp"
+        android:orientation="vertical"
+        android:padding="10dp">
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="220dp"
+            android:padding="10dp"
+            android:weightSum="5">
+
+            <EditText
+                android:id="@+id/edtThemban"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="4"
+                android:background="@null"
+                android:hint="Nhập email"
+                android:paddingLeft="10dp"/>
+            <Button
+                android:id="@+id/btnGuiketban"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Ok"
+                android:layout_marginLeft="10dp"
+                android:backgroundTint="#2196F3"/>
+
+        </LinearLayout>
+
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Quét mã QR"
+            android:textSize="20sp"
+            android:textColor="#111111"
+            android:gravity="left|center"
+            android:drawableLeft="@drawable/ic_qr_code"
+            android:backgroundTint="@color/white"/>
+
+
+
+
+
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="230dp"
+        android:layout_height="230dp"
+        android:layout_gravity="center|top"
+        android:layout_marginTop="70dp"
+        android:padding="10dp"
+        android:background="@drawable/background_main">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tên"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:layout_gravity="center|top"/>
+        <com.google.android.material.imageview.ShapeableImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center|top"
+            android:src="@drawable/avatar_default"
+            android:scaleType="centerCrop"
+            app:shapeAppearanceOverlay="@style/CircularImage"
+            android:layout_margin="50dp"
+            android:id="@+id/imageviewavatarI"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Quét mã để thêm bạn với tôi"
+            android:layout_gravity="center|bottom"/>
+
+    </FrameLayout>
+
+</FrameLayout>

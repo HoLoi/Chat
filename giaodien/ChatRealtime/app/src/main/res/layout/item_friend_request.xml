@@ -1,0 +1,31 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:padding="8dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:id="@+id/main">
+
+<!--    item_friend_request-->
+    <TextView
+        android:id="@+id/tvRequestName"
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:layout_height="match_parent"
+        android:textSize="16sp"
+        android:gravity="center_vertical"/>
+
+    <Button
+        android:id="@+id/btnAccept"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Chấp nhận"
+        android:backgroundTint="#2196F3"/>
+
+    <Button
+        android:id="@+id/btnReject"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Từ chối"
+        android:layout_marginStart="5dp"
+        android:backgroundTint="#B6B2B2"/>
+</LinearLayout>
