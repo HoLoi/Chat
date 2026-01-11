@@ -1,7 +1,10 @@
 package com.example.chatrealtime.controller;
 
+import com.example.chatrealtime.entity.BanBe;
+import com.example.chatrealtime.entity.BanBeId;
 import com.example.chatrealtime.repository.BanBeRepository;
 import com.example.chatrealtime.service.FriendService;
+import jakarta.transaction.Transactional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,16 +44,22 @@ public class FriendController {
             @RequestParam Integer myId,
             @RequestParam Integer friendId
     ) {
-        String status = banBeRepo.findStatus(myId, friendId)
-                .map(s -> {
-                    if ("cho".equals(s)) return "pending";
-                    if ("dongy".equals(s)) return "friend";
-                    return "not_friend";
-                })
-                .orElse("not_friend");
+        if (!banBeRepo.existsRelation(myId, friendId)) {
+            return ResponseEntity.ok(Map.of("status", "not_friend"));
+        }
 
-        return ResponseEntity.ok(Map.of("status", status));
+        var statuses = banBeRepo.findStatuses(myId, friendId);
+
+        if (statuses.contains("dongy"))
+            return ResponseEntity.ok(Map.of("status", "friend"));
+
+        if (statuses.contains("cho"))
+            return ResponseEntity.ok(Map.of("status", "pending"));
+
+        return ResponseEntity.ok(Map.of("status", "not_friend"));
     }
+
+
 
     @GetMapping("/requests")
     public List<Map<String, Object>> getFriendRequests(
@@ -59,14 +68,24 @@ public class FriendController {
         return banBeRepo.getFriendRequests(maTaiKhoan);
     }
 
+
     @PostMapping("/send-request")
     public ResponseEntity<?> sendRequest(
             @RequestParam Integer myId,
             @RequestParam Integer friendId
     ) {
-        friendService.sendRequest(myId, friendId);
-        return ResponseEntity.ok(Map.of("status", "success"));
+        try {
+            friendService.sendRequest(myId, friendId);
+            return ResponseEntity.ok(Map.of("status", "success"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of(
+                            "status", "error",
+                            "message", e.getMessage()
+                    ));
+        }
     }
+
 
     @PostMapping("/cancel-request")
     public ResponseEntity<?> cancelRequest(
@@ -85,5 +104,44 @@ public class FriendController {
         friendService.unfriend(myId, friendId);
         return ResponseEntity.ok(Map.of("status", "success"));
     }
+
+    @PostMapping("/respond")
+    public ResponseEntity<?> respond(
+            @RequestParam Integer maTaiKhoan1,
+            @RequestParam Integer maTaiKhoan2,
+            @RequestParam String action
+    ) {
+        try {
+            if ("chap_nhan".equals(action)) {
+                friendService.acceptRequest(maTaiKhoan1, maTaiKhoan2);
+                return ResponseEntity.ok(
+                        Map.of(
+                                "status", "success",
+                                "message", "Đã chấp nhận lời mời kết bạn"
+                        )
+                );
+            }
+
+            if ("tu_choi".equals(action)) {
+                friendService.rejectRequest(maTaiKhoan1, maTaiKhoan2);
+                return ResponseEntity.ok(
+                        Map.of(
+                                "status", "success",
+                                "message", "Đã từ chối lời mời kết bạn"
+                        )
+                );
+            }
+
+            return ResponseEntity.badRequest().body(
+                    Map.of("status", "error", "message", "Hành động không hợp lệ")
+            );
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    Map.of("status", "error", "message", e.getMessage())
+            );
+        }
+    }
+
 
 }

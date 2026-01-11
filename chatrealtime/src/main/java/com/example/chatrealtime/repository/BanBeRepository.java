@@ -27,14 +27,6 @@ public interface BanBeRepository extends JpaRepository<BanBe, BanBeId> {
         """, nativeQuery = true)
     List<Map<String, Object>> getFriends(@Param("maTaiKhoan") Integer maTaiKhoan);
 
-    @Query("""
-        SELECT b.trangThai FROM BanBe b
-        WHERE (b.id.maTaiKhoan1 = :a AND b.id.maTaiKhoan2 = :b)
-           OR (b.id.maTaiKhoan1 = :b AND b.id.maTaiKhoan2 = :a)
-    """)
-    Optional<String> findStatus(@Param("a") Integer a,
-                                @Param("b") Integer b);
-
 
     @Query(value = """
         SELECT 
@@ -73,14 +65,43 @@ public interface BanBeRepository extends JpaRepository<BanBe, BanBeId> {
     void insertReverseFriend(@Param("from") Integer from,
                              @Param("to") Integer to);
 
+    @Query("""
+    SELECT COUNT(b) > 0 FROM BanBe b
+    WHERE (b.id.maTaiKhoan1 = :a AND b.id.maTaiKhoan2 = :b)
+       OR (b.id.maTaiKhoan1 = :b AND b.id.maTaiKhoan2 = :a)
+""")
+    boolean existsRelation(@Param("a") Integer a,
+                           @Param("b") Integer b);
+
+
     @Modifying
     @Query("""
-        UPDATE BanBe b
-        SET b.trangThai = 'tuchoi'
+    DELETE FROM BanBe b
+    WHERE (b.id.maTaiKhoan1 = :a AND b.id.maTaiKhoan2 = :b)
+       OR (b.id.maTaiKhoan1 = :b AND b.id.maTaiKhoan2 = :a)
+""")
+    void deleteRelation(@Param("a") Integer a,
+                        @Param("b") Integer b);
+
+    @Query("""
+    SELECT b.trangThai FROM BanBe b
+    WHERE (b.id.maTaiKhoan1 = :a AND b.id.maTaiKhoan2 = :b)
+       OR (b.id.maTaiKhoan1 = :b AND b.id.maTaiKhoan2 = :a)
+""")
+    List<String> findStatuses(@Param("a") Integer a,
+                              @Param("b") Integer b);
+
+
+
+    @Query("""
+        SELECT COUNT(b) > 0 FROM BanBe b
         WHERE b.id.maTaiKhoan1 = :from
           AND b.id.maTaiKhoan2 = :to
-          AND b.trangThai = 'cho'
-    """)
-    int rejectRequest(@Param("from") Integer from,
-                      @Param("to") Integer to);
+          AND b.trangThai IN ('cho','dongy')
+        """)
+            boolean existsActiveRequest(
+                    @Param("from") Integer from,
+                    @Param("to") Integer to
+    );
+
 }

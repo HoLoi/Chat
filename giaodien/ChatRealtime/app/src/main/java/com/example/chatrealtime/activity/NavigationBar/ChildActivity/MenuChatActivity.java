@@ -83,7 +83,7 @@ public class MenuChatActivity extends AppCompatActivity {
     }
 
     private void loadRoomMembers(int maPhong) {
-        String url = Constants.BASE_URL + "get_room_member.php?maPhongChat=" + maPhong;
+        String url = Constants.BASE_URL + "chat/room-members?maPhongChat=" + maPhong;
 
         RequestQueue queue = Volley.newRequestQueue(this);
 

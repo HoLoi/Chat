@@ -43,6 +43,7 @@ public class PersionalPageActivity extends AppCompatActivity {
     int myId; // ID người dùng hiện tại từ session
     String action = "";
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -137,46 +138,6 @@ public class PersionalPageActivity extends AppCompatActivity {
     }
 
 
-
-
-//    private void checkFriendStatus() {
-//
-//        if (myId == friendId) {
-//            btnKetban.setVisibility(View.GONE);
-//            btnNhanTin.setVisibility(View.GONE);
-//            return;
-//        }
-//
-//        String url = Constants.BASE_URL +
-//                "check_friend_status.php?myId=" + myId + "&friendId=" + friendId;
-//
-//        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
-//                response -> {
-//                    try {
-//                        String status = response.getString("status");
-//
-//                        switch (status) {
-//                            case "not_friend":
-//                                btnKetban.setText("Kết bạn");
-//                                btnNhanTin.setVisibility(View.GONE);
-//                                break;
-//
-//                            case "pending":
-//                                btnKetban.setText("Hủy yêu cầu");
-//                                btnNhanTin.setVisibility(View.GONE);
-//                                break;
-//
-//                            case "friend":
-//                                btnKetban.setText("Hủy kết bạn");
-//                                btnNhanTin.setVisibility(View.VISIBLE);
-//                                break;
-//                        }
-//
-//                    } catch (Exception ignored) {}
-//                }, error -> {});
-//        Volley.newRequestQueue(this).add(request);
-//    }
-
     private void checkFriendStatus() {
 
         if (myId == friendId) {
@@ -216,43 +177,6 @@ public class PersionalPageActivity extends AppCompatActivity {
 
         Volley.newRequestQueue(this).add(request);
     }
-
-
-
-//    private void toggleFriendAction() {
-//        String uiText = btnKetban.getText().toString();
-//        String action = "";
-//
-//        switch (uiText) {
-//            case "Kết bạn":
-//                action = "send_request";
-//                break;
-//
-//            case "Hủy yêu cầu":
-//                action = "cancel_request";
-//                break;
-//
-//            case "Hủy kết bạn":
-//                action = "unfriend";
-//                break;
-//        }
-//
-//        String url = Constants.BASE_URL + "friend_action.php";
-//
-//        JSONObject body = new JSONObject();
-//        try {
-//            body.put("myId", myId);
-//            body.put("friendId", friendId);
-//            body.put("action", action);
-//        } catch (Exception ignored) {}
-//
-//        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, body,
-//                resp -> checkFriendStatus(),
-//                error -> {}
-//        );
-//
-//        Volley.newRequestQueue(this).add(request);
-//    }
 
     private void toggleFriendAction() {
         String uiText = btnKetban.getText().toString();
@@ -294,65 +218,6 @@ public class PersionalPageActivity extends AppCompatActivity {
                 .setNegativeButton("Hủy", null)
                 .show();
     }
-
-//    private void sendFriendAction() {
-//
-//        Log.d("FRIEND_ACTION", "➡ Sending action: " + action +
-//                " | myId=" + myId + " | friendId=" + friendId);
-//
-//        String url = Constants.BASE_URL + "friend_action.php";
-//        Log.d("FRIEND_ACTION", "➡ API URL: " + url);
-//
-//        // Sử dụng StringRequest để gửi dữ liệu dạng x-www-form-urlencoded
-//        StringRequest request = new StringRequest(Request.Method.POST, url,
-//                response -> {
-//                    Log.d("FRIEND_ACTION", "✅ Server response: " + response);
-//                    try {
-//                        JSONObject resp = new JSONObject(response);
-//                        String status = resp.getString("status");
-//                        Log.d("FRIEND_ACTION", "➡ Status response: " + status);
-//
-//                        if (status.equals("success") && action.equals("send_request")) {
-//                            Log.d("FRIEND_ACTION", "📡 Sending WebSocket friend_request...");
-//                            sendFriendRequestRealtime(myId, friendId);
-//                        } else if (action.equals("cancel_request") || action.equals("unfriend")) {
-//                            sendFriendCancelRealtime(myId, friendId);
-//                        }
-//
-//                        // CẬP NHẬT SQLITE KHI UNFRIEND
-//                        if (action.equals("unfriend")) {
-//                            ChatDatabaseHelper db = new ChatDatabaseHelper(this);
-//                            db.deleteFriend(friendId);
-//                        }
-//
-//                        Log.d("FRIEND_ACTION", "🔄 Updating UI after action...");
-//                        checkFriendStatus();
-//
-//                    } catch (Exception e) {
-//                        Log.e("FRIEND_ACTION", "❌ Error parsing response: " + e.getMessage());
-//                    }
-//                },
-//                error -> {
-//                    if (error.networkResponse != null) {
-//                        Log.e("FRIEND_ACTION", "❌ Volley error: " + error.toString() +
-//                                " | Status code: " + error.networkResponse.statusCode);
-//                    } else {
-//                        Log.e("FRIEND_ACTION", "❌ Volley error: " + error.toString());
-//                    }
-//                }) {
-//            @Override
-//            protected Map<String, String> getParams() {
-//                Map<String, String> params = new HashMap<>();
-//                params.put("myId", String.valueOf(myId));
-//                params.put("friendId", String.valueOf(friendId));
-//                params.put("action", action);
-//                return params;
-//            }
-//        };
-//
-//        Log.d("FRIEND_ACTION", "📤 Sending request to server...");
-//        Volley.newRequestQueue(this).add(request);
-//    }
 
     private void sendFriendAction() {
 
@@ -414,7 +279,7 @@ public class PersionalPageActivity extends AppCompatActivity {
 
 
     private void openPrivateChat() {
-        String url = Constants.BASE_URL + "create_room.php";
+        String url = Constants.BASE_URL + "chat/create-room";
 
         SessionManager sm = new SessionManager(this);
         String token = sm.getToken();
@@ -456,16 +321,17 @@ public class PersionalPageActivity extends AppCompatActivity {
             @Override
             protected Map<String, String> getParams() {
                 Map<String, String> params = new HashMap<>();
-                params.put("members", "[" + friendId + "]"); // format backend yêu cầu
+                params.put("members", String.valueOf(friendId)); // 1-1 chat
+                params.put("currentUserId", String.valueOf(myId));
                 return params;
             }
 
-            @Override
-            public Map<String, String> getHeaders() {
-                Map<String, String> headers = new HashMap<>();
-                headers.put("Authorization", "Bearer " + token);
-                return headers;
-            }
+//            @Override
+//            public Map<String, String> getHeaders() {
+//                Map<String, String> headers = new HashMap<>();
+//                headers.put("Authorization", "Bearer " + token);
+//                return headers;
+//            }
         };
 
         Volley.newRequestQueue(this).add(req);

@@ -16,30 +16,27 @@ public class MessageController {
     private MessageService messageService;
 
     // ===== SEND MESSAGE =====
-    @PostMapping("/send")
+    @PostMapping("/send-message")
     public ResponseEntity<?> sendMessage(
             @RequestParam Integer maPhongChat,
+            @RequestParam Integer maTaiKhoanGui,
             @RequestParam(required = false) String noiDung,
             @RequestParam(defaultValue = "text") String loaiTinNhan,
-            @RequestParam(required = false) String duongDanFile,
-            @RequestAttribute("maTaiKhoan") Integer maTaiKhoan
+            @RequestParam(required = false) String duongDanFile
     ) {
-        if ((noiDung == null || noiDung.isBlank())
-                && duongDanFile == null) {
+        if ((noiDung == null || noiDung.isBlank()) && duongDanFile == null) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("status", "error",
-                            "message", "Thiếu nội dung"));
+                    .body(Map.of("status", "error", "message", "Thiếu nội dung"));
         }
 
         TinNhan t = messageService.sendMessage(
-                maPhongChat, maTaiKhoan,
+                maPhongChat, maTaiKhoanGui,
                 noiDung, loaiTinNhan, duongDanFile
         );
 
-        return ResponseEntity.ok(
-                Map.of("status", "success", "message", t)
-        );
+        return ResponseEntity.ok(Map.of("status", "success", "message", t));
     }
+
 
     // ===== GET MESSAGES =====
     @GetMapping("/messages")
