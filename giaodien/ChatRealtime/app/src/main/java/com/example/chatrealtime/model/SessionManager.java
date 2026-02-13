@@ -23,13 +23,20 @@ public class SessionManager {
         editor.putInt(KEY_MA_TAI_KHOAN, maTaiKhoan);
         editor.putInt(KEY_MA_NGUOI_DUNG, maNguoiDung);
         editor.putString(KEY_EMAIL, email);
-        editor.putString(KEY_TOKEN, token);
+        editor.putString(KEY_TOKEN, token == null ? "" : token);
         editor.putBoolean(KEY_REMEMBER, remember);
         editor.apply();
     }
 
     public boolean isLoggedIn() {
-        return prefs.contains(KEY_TOKEN) && prefs.getBoolean(KEY_REMEMBER, false);
+        boolean remember = prefs.getBoolean(KEY_REMEMBER, false);
+        if (!remember) return false;
+
+        String token = prefs.getString(KEY_TOKEN, "");
+        String email = prefs.getString(KEY_EMAIL, "");
+        int accountId = prefs.getInt(KEY_MA_TAI_KHOAN, -1);
+
+        return accountId != -1 && (!token.isEmpty() || !email.isEmpty());
     }
 
     public int getMaTaiKhoan() {
@@ -46,6 +53,11 @@ public class SessionManager {
 
     public String getToken() {
         return prefs.getString(KEY_TOKEN, null);
+    }
+
+    public void updateToken(String token) {
+        editor.putString(KEY_TOKEN, token == null ? "" : token);
+        editor.apply();
     }
 
     public void logout() {

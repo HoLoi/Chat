@@ -63,6 +63,7 @@ public class ChatActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
+        Log.d("CHAT_OPEN", "Extras chatId=" + getIntent().getStringExtra("chatId") + " maPhong=" + getIntent().getIntExtra("maPhong", -1) + " maPhongChat=" + getIntent().getIntExtra("maPhongChat", -1) + " roomName=" + getIntent().getStringExtra("roomName"));
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
@@ -82,14 +83,24 @@ public class ChatActivity extends AppCompatActivity {
             recyclerMessages.scrollToPosition(adapter.getItemCount() - 1);
         }
 
+        // Nhận từ notification/bubble: ưu tiên "maPhong", fallback "chatId"
         roomId = getIntent().getIntExtra("maPhong", -1);
         if (roomId == -1) {
+            roomId = getIntent().getIntExtra("chatId", -1);
+        }
+        if (roomId == -1) {
+            roomId = getIntent().getIntExtra("maPhongChat", -1);
+        }
+        if (roomId == -1) {
             Toast.makeText(this, "Không tìm thấy phòng chat", Toast.LENGTH_SHORT).show();
-            finish();
+            // Không finish để tránh thoát app đột ngột; chỉ dừng init WebSocket/loader
             return;
         }
 
         roomName = getIntent().getStringExtra("roomName");
+        if (roomName == null || roomName.isEmpty()) {
+            roomName = "Đoạn chat";
+        }
         txtNameChat.setText(roomName);
 
         CURRENT_OPEN_ROOM = roomId;
@@ -97,6 +108,14 @@ public class ChatActivity extends AppCompatActivity {
         loadMessages();
         setupWebSocket();
         setupActions();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (roomId != -1) {
+            markAsReadImmediately(roomId);
+        }
     }
 
     private void initViews() {
@@ -283,6 +302,9 @@ public class ChatActivity extends AppCompatActivity {
                             adapter.addMessages(tmp);
                             recyclerMessages.scrollToPosition(adapter.getItemCount() - 1);
 
+                            // đánh dấu đã đọc khi đã vào phòng và tải xong
+                            markAsReadImmediately(roomId);
+
                             // QUAN TRỌNG: Lưu danh sách chuẩn từ Server vào SQLite
                             dbHelper.saveMessages(roomId, tmp);
                         } else {
@@ -347,7 +369,9 @@ public class ChatActivity extends AppCompatActivity {
      * Gọi API đánh dấu đã đọc ngay lập tức cho 1 tin nhắn cụ thể hoặc cả phòng
      */
     private void markAsReadImmediately(int maPhong) {
-        String url = Constants.BASE_URL + "mark_read.php";
+        String url = Constants.BASE_URL + "chat/mark-read";
+
+        Log.d("MARK_READ", "POST " + url + " maPhongChat=" + maPhong + " maTaiKhoan=" + session.getMaTaiKhoan());
 
         StringRequest request = new StringRequest(Request.Method.POST, url,
                 response -> Log.d("MARK_READ", "✅ Đã đánh dấu đọc tin mới"),
@@ -357,6 +381,7 @@ public class ChatActivity extends AppCompatActivity {
             protected Map<String, String> getParams() {
                 Map<String, String> params = new HashMap<>();
                 params.put("maPhongChat", String.valueOf(maPhong));
+                params.put("maTaiKhoan", String.valueOf(session.getMaTaiKhoan()));
                 return params;
             }
 
@@ -375,6 +400,9 @@ public class ChatActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        if (roomId != -1) {
+            markAsReadImmediately(roomId);
+        }
         CURRENT_OPEN_ROOM = -1;
     }
 }

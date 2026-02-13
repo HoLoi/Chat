@@ -17,12 +17,14 @@ public class AppLifecycleObserver implements DefaultLifecycleObserver {
     @Override
     public void onStart(@NonNull LifecycleOwner owner) {
         Log.d("Lifecycle", "App moved to foreground");
+        AppVisibility.setForeground(true);
         StatusUpdater.updateStatus(context, "online");
     }
 
     @Override
     public void onStop(@NonNull LifecycleOwner owner) {
         Log.d("Lifecycle", "App moved to background");
+        AppVisibility.setForeground(false);
         StatusUpdater.updateStatus(context, "offline");
     }
 }

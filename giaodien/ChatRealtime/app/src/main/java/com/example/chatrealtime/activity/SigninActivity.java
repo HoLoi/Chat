@@ -246,6 +246,9 @@ public class SigninActivity extends AppCompatActivity {
                 .addOnSuccessListener(token -> {
                     Log.d("FCM_TOKEN", token);
 
+                    // Lưu token vào session để phiên đăng nhập được giữ sau khi thoát app
+                    sessionManager.updateToken(token);
+
                     guiTokenLenServer(maTaiKhoan, token);
                 });
     }

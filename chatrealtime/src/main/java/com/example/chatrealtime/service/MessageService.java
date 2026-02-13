@@ -1,21 +1,24 @@
 package com.example.chatrealtime.service;
 
-import com.example.chatrealtime.entity.TinNhan;
-import com.example.chatrealtime.entity.TrangThaiTinNhan;
-import com.example.chatrealtime.entity.TrangThaiTinNhanId;
-import com.example.chatrealtime.repository.TaiKhoanRepository;
-import com.example.chatrealtime.repository.ThanhVienPhongRepository;
-import com.example.chatrealtime.repository.TinNhanRepository;
-import com.example.chatrealtime.repository.TrangThaiTinNhanRepository;
-import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.example.chatrealtime.entity.TinNhan;
+import com.example.chatrealtime.entity.TrangThaiTinNhan;
+import com.example.chatrealtime.entity.TrangThaiTinNhanId;
+import com.example.chatrealtime.repository.PhongChatRepository;
+import com.example.chatrealtime.repository.TaiKhoanRepository;
+import com.example.chatrealtime.repository.ThanhVienPhongRepository;
+import com.example.chatrealtime.repository.TinNhanRepository;
+import com.example.chatrealtime.repository.TrangThaiTinNhanRepository;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class MessageService {
@@ -31,6 +34,9 @@ public class MessageService {
 
     @Autowired
     private TaiKhoanRepository taiKhoanRepo;
+
+        @Autowired
+        private PhongChatRepository phongChatRepo;
 
     @Autowired
     private FcmService fcmService;
@@ -89,6 +95,16 @@ public class MessageService {
                                String content,
                                String type) {
 
+        String senderName = taiKhoanRepo.findById(senderId)
+                .map(tk -> tk.getNguoiDung() != null && tk.getNguoiDung().getTenNguoiDung() != null
+                        ? tk.getNguoiDung().getTenNguoiDung()
+                        : tk.getEmail())
+                .orElse("Tin nhan moi");
+
+        String roomName = phongChatRepo.findById(roomId)
+                .map(pc -> pc.getTenPhongChat())
+                .orElse("Doan chat");
+
         List<Integer> receivers = members.stream()
                 .filter(id -> !Objects.equals(id, senderId))
                 .toList();
@@ -108,11 +124,17 @@ public class MessageService {
                 "type", "chat_message",
                 "maPhongChat", String.valueOf(roomId),
                 "maTaiKhoanGui", String.valueOf(senderId),
+                "tenNguoiGui", senderName,
+                "roomName", roomName,
                 "noiDung", content != null ? content : "",
                 "loaiTinNhan", type != null ? type : "text"
         );
 
-        fcmService.sendMulticast(tokens, "Tin nhan moi", content != null ? content : "", data);
+        // Tiêu đề dùng tên người gửi để notification hệ thống (nếu Android tự hiển thị) có đúng tên
+        String title = senderName;
+        String body = content != null ? content : "";
+
+        fcmService.sendMulticast(tokens, title, body, data);
     }
 
 

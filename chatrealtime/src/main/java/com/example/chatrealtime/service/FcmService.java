@@ -22,7 +22,6 @@ import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.MulticastMessage;
-import com.google.firebase.messaging.Notification;
 import com.google.firebase.messaging.SendResponse;
 
 @Service
@@ -88,7 +87,6 @@ public class FcmService {
 
 		Message.Builder builder = Message.builder()
 				.setToken(token)
-				.setNotification(Notification.builder().setTitle(title).setBody(body).build())
 				.setAndroidConfig(AndroidConfig.builder().setPriority(AndroidConfig.Priority.HIGH).build())
 				.putData("title", title)
 				.putData("body", body);
@@ -98,7 +96,7 @@ public class FcmService {
 		}
 
 		try {
-			log.debug("FCM sendToToken -> token: {}", token);
+			log.info("FCM sendToToken -> token={}, title={}, body={}, data={}", token, title, body, data);
 			String messageId = FirebaseMessaging.getInstance().send(builder.build());
 			log.info("Send to token success: id={}", messageId);
 		} catch (FirebaseMessagingException e) {
@@ -116,7 +114,6 @@ public class FcmService {
 
 		MulticastMessage.Builder builder = MulticastMessage.builder()
 				.addAllTokens(tokens)
-				.setNotification(Notification.builder().setTitle(title).setBody(body).build())
 				.setAndroidConfig(AndroidConfig.builder().setPriority(AndroidConfig.Priority.HIGH).build())
 				.putData("title", title)
 				.putData("body", body);
@@ -128,6 +125,7 @@ public class FcmService {
 		MulticastMessage message = builder.build();
 
 		try {
+			log.info("FCM sending multicast -> tokens={}, title={}, body={}, data={}", tokens.size(), title, body, data);
 			BatchResponse response = FirebaseMessaging.getInstance().sendEachForMulticast(message);
 			log.info("Send multicast result: success={}, failure={}", response.getSuccessCount(), response.getFailureCount());
 			if (response.getFailureCount() > 0) {
