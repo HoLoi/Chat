@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "570362891599",
+    "project_id": "appchat-c5216",
+    "storage_bucket": "appchat-c5216.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:570362891599:android:ebb676e5176af8ab34493a",
+        "android_client_info": {
+          "package_name": "com.example.chatrealtime"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD5SQm_i8SyGLPC2l_Ifm2poCVb4mb0fdA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

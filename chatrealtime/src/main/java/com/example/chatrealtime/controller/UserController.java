@@ -285,4 +285,39 @@ public class UserController {
                         Map.of("status", "error", "message", "Không tìm thấy thông tin")
                 ));
     }
+
+    // =========================
+    // UPDATE FCM TOKEN
+    // =========================
+    @PostMapping("/update-token")
+    public Map<String, Object> updateFcmToken(
+            @RequestParam Integer maTaiKhoan,
+            @RequestParam String token
+    ) {
+        Map<String, Object> res = new HashMap<>();
+
+        if (token == null || token.isBlank()) {
+            res.put("status", "error");
+            res.put("message", "Token không hợp lệ");
+            return res;
+        }
+
+        Optional<TaiKhoan> opt = taiKhoanRepo.findById(maTaiKhoan);
+        if (opt.isEmpty()) {
+            res.put("status", "error");
+            res.put("message", "Không tìm thấy tài khoản");
+            return res;
+        }
+
+        TaiKhoan tk = opt.get();
+
+        // 👉 LƯU / CẬP NHẬT TOKEN
+        tk.setToken(token);
+        taiKhoanRepo.save(tk);
+
+        res.put("status", "success");
+        res.put("message", "Cập nhật token thành công");
+        return res;
+    }
+
 }

@@ -16,6 +16,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ChatRealtime"
         android:usesCleartextTraffic="true">
+
+        <service
+            android:name=".service.MyFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+            </intent-filter>
+        </service>
+
         <activity
             android:name=".activity.NavigationBar.ChildActivity.PersionalPageActivity"
             android:exported="false" />

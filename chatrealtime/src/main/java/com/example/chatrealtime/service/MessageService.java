@@ -3,6 +3,7 @@ package com.example.chatrealtime.service;
 import com.example.chatrealtime.entity.TinNhan;
 import com.example.chatrealtime.entity.TrangThaiTinNhan;
 import com.example.chatrealtime.entity.TrangThaiTinNhanId;
+import com.example.chatrealtime.repository.TaiKhoanRepository;
 import com.example.chatrealtime.repository.ThanhVienPhongRepository;
 import com.example.chatrealtime.repository.TinNhanRepository;
 import com.example.chatrealtime.repository.TrangThaiTinNhanRepository;
@@ -12,6 +13,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 public class MessageService {
@@ -24,6 +28,13 @@ public class MessageService {
 
     @Autowired
     private TrangThaiTinNhanRepository trangThaiRepo;
+
+    @Autowired
+    private TaiKhoanRepository taiKhoanRepo;
+
+    @Autowired
+    private FcmService fcmService;
+
 
     @Transactional
     public TinNhan sendMessage(
@@ -59,6 +70,9 @@ public class MessageService {
             trangThaiRepo.save(tt);
         }
 
+        // Gửi push FCM cho các thành viên khác
+        notifyMembers(members, maTaiKhoanGui, maPhongChat, noiDung, loaiTinNhan);
+
         return saved;
     }
 
@@ -67,6 +81,38 @@ public class MessageService {
             Integer maTaiKhoan
     ) {
         return tinNhanRepo.getMessages(maPhongChat, maTaiKhoan);
+    }
+
+    private void notifyMembers(List<Integer> members,
+                               Integer senderId,
+                               Integer roomId,
+                               String content,
+                               String type) {
+
+        List<Integer> receivers = members.stream()
+                .filter(id -> !Objects.equals(id, senderId))
+                .toList();
+
+        if (receivers.isEmpty()) return;
+
+        List<Object[]> tokenData = taiKhoanRepo.getUserTokenAndStatus(receivers);
+
+        List<String> tokens = tokenData.stream()
+                .map(arr -> (String) arr[1])
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        if (tokens.isEmpty()) return;
+
+        Map<String, String> data = Map.of(
+                "type", "chat_message",
+                "maPhongChat", String.valueOf(roomId),
+                "maTaiKhoanGui", String.valueOf(senderId),
+                "noiDung", content != null ? content : "",
+                "loaiTinNhan", type != null ? type : "text"
+        );
+
+        fcmService.sendMulticast(tokens, "Tin nhan moi", content != null ? content : "", data);
     }
 
 

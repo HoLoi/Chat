@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -61,4 +62,11 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-process:2.7.0")
     // Quản lý lifecycle cơ bản của mọi component,Dùng DefaultLifecycleObserver để bắt sự kiện
     implementation("androidx.lifecycle:lifecycle-runtime:2.7.0")
+
+    // thu vien firebase
+    implementation(platform("com.google.firebase:firebase-bom:34.7.0"))
+    implementation("com.google.firebase:firebase-analytics")
+
+    // thu vien firebase cloud messaging dung de nhan thong bao push
+    implementation("com.google.firebase:firebase-messaging")
 }

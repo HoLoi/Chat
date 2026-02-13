@@ -30,6 +30,7 @@ import com.example.chatrealtime.model.SessionManager;
 import com.example.chatrealtime.model.WebSocketService;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -191,6 +192,9 @@ public class SigninActivity extends AppCompatActivity {
                                     cbGhiNho.isChecked()
                             );
 
+                            // CHÈN LẤY TOKEN NGAY TẠI ĐÂY
+                            layVaGuiFcmToken(maTaiKhoan);
+
                             Toast.makeText(this, "Đăng nhập thành công", Toast.LENGTH_SHORT).show();
 
                             updateStatus("online");
@@ -237,6 +241,33 @@ public class SigninActivity extends AppCompatActivity {
         Volley.newRequestQueue(this).add(request);
     }
 
+    private void layVaGuiFcmToken(int maTaiKhoan) {
+        FirebaseMessaging.getInstance().getToken()
+                .addOnSuccessListener(token -> {
+                    Log.d("FCM_TOKEN", token);
+
+                    guiTokenLenServer(maTaiKhoan, token);
+                });
+    }
+
+    private void guiTokenLenServer(int maTaiKhoan, String token) {
+        StringRequest request = new StringRequest(
+                Request.Method.POST,
+                Constants.BASE_URL + "user/update-token",
+                response -> Log.d("FCM", "Đã lưu token"),
+                error -> Log.e("FCM", "Lỗi gửi token")
+        ) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                params.put("maTaiKhoan", String.valueOf(maTaiKhoan));
+                params.put("token", token);
+                return params;
+            }
+        };
+
+        Volley.newRequestQueue(this).add(request);
+    }
 
     // 🔹 Cập nhật trạng thái online/offline
 //    private void updateStatus(String status) {

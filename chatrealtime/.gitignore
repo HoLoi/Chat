@@ -4,6 +4,9 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+### Firebase ###
+src/main/resources/firebase/*.json
+
 ### STS ###
 .apt_generated
 .classpath
