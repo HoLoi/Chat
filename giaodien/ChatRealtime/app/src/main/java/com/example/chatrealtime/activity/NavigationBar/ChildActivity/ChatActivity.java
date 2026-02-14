@@ -1,6 +1,8 @@
 package com.example.chatrealtime.activity.NavigationBar.ChildActivity;
 
 import android.content.Intent;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -29,6 +31,8 @@ import com.example.chatrealtime.database.ChatDatabaseHelper;
 import com.example.chatrealtime.model.Message;
 import com.example.chatrealtime.model.SessionManager;
 import com.example.chatrealtime.model.WebSocketService;
+import com.example.chatrealtime.network.VolleyMultipartRequest;
+import com.example.chatrealtime.network.VolleyMultipartRequest.DataPart;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -47,6 +51,7 @@ public class ChatActivity extends AppCompatActivity {
     private EditText edtMessage;
     private Button btnSend;
     private ImageView btnBack, btnMenu;
+    private ImageButton btnAttach;
 
     private MessageAdapter adapter;
     private final List<Message> messageList = new ArrayList<>();
@@ -58,6 +63,8 @@ public class ChatActivity extends AppCompatActivity {
     private ChatDatabaseHelper dbHelper;
 
     private static final String BASE_URL = Constants.BASE_URL;
+    private static final int REQ_PICK_MEDIA = 1010;
+    private static final int MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10MB
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -125,6 +132,7 @@ public class ChatActivity extends AppCompatActivity {
         btnSend = findViewById(R.id.btnSend);
         btnBack = findViewById(R.id.btnback);
         btnMenu = findViewById(R.id.iv_menu);
+        btnAttach = findViewById(R.id.btnAttach);
     }
 
     private void initSession() {
@@ -175,6 +183,8 @@ public class ChatActivity extends AppCompatActivity {
             }
         });
 
+        btnAttach.setOnClickListener(v -> openMediaPicker());
+
         btnBack.setOnClickListener(v -> {
             finish();
             overridePendingTransition(android.R.anim.slide_in_left, android.R.anim.slide_out_right);
@@ -207,19 +217,15 @@ public class ChatActivity extends AppCompatActivity {
 
             Log.d("SEND_WS", "➡️ Gửi WS tin nhắn: " + json);
 
-            // Gửi qua WebSocket (realtime)
             WebSocketService.getInstance().sendJson(json);
 
-            // Hiển thị ngay trên UI
-            adapter.addMessage(new Message(msg, true, maTaiKhoan));
+            adapter.addMessage(new Message(msg, true, maTaiKhoan, "text", null, null, session.getEmail()));
             recyclerMessages.scrollToPosition(adapter.getItemCount() - 1);
             edtMessage.setText("");
 
-            // LƯU TIN NHẮN GỬI ĐI VÀO SQLITE
-            dbHelper.addMessage(roomId, maTaiKhoan, msg);
+            dbHelper.addMessage(roomId, maTaiKhoan, msg, "text", null);
 
-            // Lưu vào DB qua API
-            sendMessageApi(json);
+            sendMessageApi(json, null, "text", null);
         } catch (Exception e) {
             Log.e("SEND_MSG_ERR", "❌ Lỗi gửi tin nhắn: " + e.getMessage(), e);
         }
@@ -228,7 +234,7 @@ public class ChatActivity extends AppCompatActivity {
     /**
      * ✅ Gửi request POST để lưu tin nhắn vào MySQL
      */
-    private void sendMessageApi(JSONObject messageJson) {
+    private void sendMessageApi(JSONObject messageJson, String duongDanFile, String loaiTinNhan, String noiDungFallback) {
         String url = BASE_URL + "chat/send-message";
         Log.d("SEND_API", "🟩 Gửi request lưu DB tới: " + url);
 
@@ -252,8 +258,11 @@ public class ChatActivity extends AppCompatActivity {
                 try {
                     params.put("maPhongChat", String.valueOf(messageJson.getInt("maPhongChat")));
                     params.put("maTaiKhoanGui", String.valueOf(messageJson.getInt("maTaiKhoanGui")));
-                    params.put("noiDung", messageJson.getString("noiDung"));
-                    params.put("loaiTinNhan", messageJson.optString("loaiTinNhan", "text"));
+                    params.put("noiDung", noiDungFallback != null ? noiDungFallback : messageJson.optString("noiDung", ""));
+                    params.put("loaiTinNhan", loaiTinNhan != null ? loaiTinNhan : messageJson.optString("loaiTinNhan", "text"));
+                    if (duongDanFile != null) {
+                        params.put("duongDanFile", duongDanFile);
+                    }
                     Log.d("SEND_API_PARAMS", "📦 Params gửi đi: " + params);
                 } catch (Exception e) {
                     Log.e("PARAM_ERR", "❌ Lỗi tạo params: " + e.getMessage());
@@ -297,7 +306,17 @@ public class ChatActivity extends AppCompatActivity {
                                 String noiDung = item.optString("noiDung", "");
                                 int maGui = item.optInt("maTaiKhoanGui", -1);
                                 boolean isMine = (maGui == maTaiKhoan);
-                                tmp.add(new Message(noiDung, isMine, maGui));
+                                String loaiTinNhan = item.optString("loaiTinNhan", "text");
+                                String fileUrl = item.optString("duongDanFile", null);
+                                if (fileUrl != null && (fileUrl.isEmpty() || "null".equals(fileUrl))) {
+                                    fileUrl = null;
+                                }
+                                String avatar = item.optString("anhDaiDienNguoiGui", null);
+                                if (avatar != null && (avatar.isEmpty() || "null".equalsIgnoreCase(avatar))) {
+                                    avatar = null;
+                                }
+                                String tenNguoiGui = item.optString("tenNguoiGui", "");
+                                tmp.add(new Message(noiDung, isMine, maGui, loaiTinNhan, fileUrl, avatar, tenNguoiGui));
                             }
                             adapter.addMessages(tmp);
                             recyclerMessages.scrollToPosition(adapter.getItemCount() - 1);
@@ -347,14 +366,24 @@ public class ChatActivity extends AppCompatActivity {
 
                 String noiDung = obj.optString("noiDung", "");
                 boolean isMine = (maGui == maTaiKhoan);
+                String loaiTinNhan = obj.optString("loaiTinNhan", "text");
+                String fileUrl = obj.optString("duongDanFile", null);
+                if (fileUrl != null && (fileUrl.isEmpty() || "null".equals(fileUrl))) {
+                    fileUrl = null;
+                }
+                String avatar = obj.optString("anhDaiDienNguoiGui", null);
+                if (avatar != null && (avatar.isEmpty() || "null".equalsIgnoreCase(avatar))) {
+                    avatar = null;
+                }
+                String tenNguoiGui = obj.optString("tenNguoiGui", "");
 
                 Log.d("WS_NEW_MSG", "💬 Tin nhắn realtime: " + noiDung + " | Từ: " + maGui);
 
-                adapter.addMessage(new Message(noiDung, isMine, maGui));
+                adapter.addMessage(new Message(noiDung, isMine, maGui, loaiTinNhan, fileUrl, avatar, tenNguoiGui));
                 recyclerMessages.scrollToPosition(adapter.getItemCount() - 1);
 
                 // LƯU TIN NHẮN ĐẾN VÀO SQLITE
-                dbHelper.addMessage(roomId, maGui, noiDung);
+                dbHelper.addMessage(roomId, maGui, noiDung, loaiTinNhan, fileUrl);
 
                 // QUAN TRỌNG: Báo Server là ĐÃ ĐỌC ngay lập tức
                 markAsReadImmediately(roomId);
@@ -404,5 +433,170 @@ public class ChatActivity extends AppCompatActivity {
             markAsReadImmediately(roomId);
         }
         CURRENT_OPEN_ROOM = -1;
+    }
+
+    private void openMediaPicker() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"image/*", "video/*"});
+        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+        startActivityForResult(intent, REQ_PICK_MEDIA);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQ_PICK_MEDIA && resultCode == RESULT_OK && data != null) {
+            if (data.getClipData() != null) {
+                int count = data.getClipData().getItemCount();
+                for (int i = 0; i < count; i++) {
+                    Uri uri = data.getClipData().getItemAt(i).getUri();
+                    uploadSelectedMedia(uri);
+                }
+            } else {
+                Uri uri = data.getData();
+                if (uri != null) {
+                    uploadSelectedMedia(uri);
+                }
+            }
+        }
+    }
+
+    private void uploadSelectedMedia(Uri uri) {
+        try {
+            String mime = getContentResolver().getType(uri);
+            String loaiTinNhan = (mime != null && mime.startsWith("video")) ? "video" : "image";
+            String fileName = getFileNameFromUri(uri);
+            byte[] fileData = readBytes(uri);
+
+            if (fileData == null || fileData.length == 0) {
+                Toast.makeText(this, "Không đọc được file", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (fileData.length > MAX_UPLOAD_BYTES) {
+                double mb = fileData.length / 1024.0 / 1024.0;
+                Toast.makeText(this, String.format("File %.1fMB vượt giới hạn 10MB", mb), Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            String url = BASE_URL + "chat/upload-file";
+            Log.d("UPLOAD_MEDIA", "➡️ Upload " + fileName + " size=" + fileData.length);
+
+            VolleyMultipartRequest req = new VolleyMultipartRequest(Request.Method.POST, url,
+                    response -> {
+                        try {
+                            String resStr = new String(response.data);
+                            Log.d("UPLOAD_MEDIA", "✅ Phản hồi: " + resStr);
+                            JSONObject obj = new JSONObject(resStr);
+                            if ("success".equals(obj.optString("status"))) {
+                                String fileUrl = obj.optString("duongDanFile", null);
+                                String type = obj.optString("loaiTinNhan", loaiTinNhan);
+                                sendMediaMessage(fileUrl, type);
+                            } else {
+                                Toast.makeText(this, "Upload thất bại", Toast.LENGTH_SHORT).show();
+                            }
+                        } catch (Exception e) {
+                            Log.e("UPLOAD_MEDIA", "❌ Lỗi parse: " + e.getMessage());
+                            Toast.makeText(this, "Upload lỗi", Toast.LENGTH_SHORT).show();
+                        }
+                    },
+                    error -> {
+                        Log.e("UPLOAD_MEDIA", "❌ Lỗi: " + error.toString());
+                        Toast.makeText(this, "Upload thất bại", Toast.LENGTH_SHORT).show();
+                    }) {
+                @Override
+                protected Map<String, String> getParams() {
+                    Map<String, String> params = new HashMap<>();
+                    params.put("maPhongChat", String.valueOf(roomId));
+                    params.put("maTaiKhoanGui", String.valueOf(maTaiKhoan));
+                    params.put("loaiTinNhan", loaiTinNhan);
+                    return params;
+                }
+
+                @Override
+                public Map<String, String> getHeaders() {
+                    Map<String, String> headers = new HashMap<>();
+                    headers.put("Authorization", "Bearer " + session.getToken());
+                    return headers;
+                }
+
+                @Override
+                protected Map<String, DataPart> getByteData() {
+                    Map<String, DataPart> params = new HashMap<>();
+                    params.put("file", new DataPart(fileName, fileData, mime != null ? mime : "application/octet-stream"));
+                    return params;
+                }
+            };
+
+            Volley.newRequestQueue(this).add(req);
+        } catch (Exception e) {
+            Log.e("UPLOAD_MEDIA", "❌ " + e.getMessage(), e);
+            Toast.makeText(this, "Upload lỗi", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void sendMediaMessage(String fileUrl, String loaiTinNhan) {
+        if (fileUrl == null) {
+            Toast.makeText(this, "Không có đường dẫn file", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Không gửi placeholder text cho ảnh; video có thể để caption tối giản
+        String placeholder = loaiTinNhan.startsWith("video") ? "" : "";
+        try {
+            JSONObject json = new JSONObject();
+            json.put("type", "chat_message");
+            json.put("maTaiKhoanGui", maTaiKhoan);
+            json.put("maPhongChat", roomId);
+            json.put("noiDung", placeholder);
+            json.put("loaiTinNhan", loaiTinNhan);
+            json.put("duongDanFile", fileUrl);
+
+            WebSocketService.getInstance().sendJson(json);
+
+            adapter.addMessage(new Message(placeholder, true, maTaiKhoan, loaiTinNhan, fileUrl, null, session.getEmail()));
+            recyclerMessages.scrollToPosition(adapter.getItemCount() - 1);
+
+            dbHelper.addMessage(roomId, maTaiKhoan, placeholder, loaiTinNhan, fileUrl);
+        } catch (Exception e) {
+            Log.e("SEND_MEDIA", "❌ " + e.getMessage(), e);
+        }
+    }
+
+    private String getFileNameFromUri(Uri uri) {
+        String result = "file";
+        Cursor cursor = null;
+        try {
+            cursor = getContentResolver().query(uri, null, null, null, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                int idx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);
+                if (idx != -1) {
+                    result = cursor.getString(idx);
+                }
+            }
+        } catch (Exception ignored) {
+        } finally {
+            if (cursor != null) cursor.close();
+        }
+        return result;
+    }
+
+    private byte[] readBytes(Uri uri) {
+        try {
+            try (java.io.InputStream inputStream = getContentResolver().openInputStream(uri);
+                 java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream()) {
+                byte[] data = new byte[8192];
+                int nRead;
+                while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
+                    buffer.write(data, 0, nRead);
+                }
+                return buffer.toByteArray();
+            }
+        } catch (Exception e) {
+            Log.e("READ_URI", "❌ " + e.getMessage());
+            return null;
+        }
     }
 }

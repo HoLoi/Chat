@@ -16,12 +16,11 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-import okhttp3.internal.ws.RealWebSocket;
 
 public class ChatDatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "chat_local.db";
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 2;
 
     // --- BẢNG ROOMS (Danh sách phòng chat) ---
     private static final String TABLE_ROOMS = "rooms";
@@ -37,6 +36,8 @@ public class ChatDatabaseHelper extends SQLiteOpenHelper {
     private static final String KEY_MSG_CONTENT = "content";
     private static final String KEY_SENDER_ID = "sender_id"; // Lưu maNguoiGui
     private static final String KEY_ROOM_REF = "room_id";
+    private static final String KEY_MSG_TYPE = "msg_type";
+    private static final String KEY_MSG_FILE = "file_url";
 
     // --- BẢNG FRIENDS (Danh sách bạn bè) ---
     private static final String TABLE_FRIENDS = "friends";
@@ -60,11 +61,13 @@ public class ChatDatabaseHelper extends SQLiteOpenHelper {
         db.execSQL(createRoomTable);
 
         // Tạo bảng Messages
-        String createMessageTable = "CREATE TABLE " + TABLE_MESSAGES + "("
-                + KEY_MSG_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
-                + KEY_ROOM_REF + " INTEGER,"
-                + KEY_SENDER_ID + " INTEGER,"
-                + KEY_MSG_CONTENT + " TEXT" + ")";
+        String createMessageTable = "CREATE TABLE " + TABLE_MESSAGES + "(" 
+            + KEY_MSG_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," 
+            + KEY_ROOM_REF + " INTEGER," 
+            + KEY_SENDER_ID + " INTEGER," 
+            + KEY_MSG_CONTENT + " TEXT," 
+            + KEY_MSG_TYPE + " TEXT," 
+            + KEY_MSG_FILE + " TEXT" + ")";
         db.execSQL(createMessageTable);
 
         // Tạo bảng Friends
@@ -154,12 +157,14 @@ public class ChatDatabaseHelper extends SQLiteOpenHelper {
     // ================== XỬ LÝ MESSAGES ==================
 
     // Thêm 1 tin nhắn mới (khi gửi hoặc nhận realtime)
-    public void addMessage(int roomId, int maNguoiGui, String content) {
+    public void addMessage(int roomId, int maNguoiGui, String content, String loaiTinNhan, String fileUrl) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(KEY_ROOM_REF, roomId);
         values.put(KEY_SENDER_ID, maNguoiGui);
         values.put(KEY_MSG_CONTENT, content);
+        values.put(KEY_MSG_TYPE, loaiTinNhan);
+        values.put(KEY_MSG_FILE, fileUrl);
         db.insert(TABLE_MESSAGES, null, values);
         db.close();
     }
@@ -177,6 +182,8 @@ public class ChatDatabaseHelper extends SQLiteOpenHelper {
                 values.put(KEY_ROOM_REF, roomId);
                 values.put(KEY_SENDER_ID, msg.getMaNguoiGui()); // Sử dụng đúng getter của bạn
                 values.put(KEY_MSG_CONTENT, msg.getNoiDung());
+                values.put(KEY_MSG_TYPE, msg.getLoaiTinNhan());
+                values.put(KEY_MSG_FILE, msg.getDuongDanFile());
                 db.insert(TABLE_MESSAGES, null, values);
             }
             db.setTransactionSuccessful();
@@ -198,10 +205,11 @@ public class ChatDatabaseHelper extends SQLiteOpenHelper {
             do {
                 String content = cursor.getString(cursor.getColumnIndexOrThrow(KEY_MSG_CONTENT));
                 int senderId = cursor.getInt(cursor.getColumnIndexOrThrow(KEY_SENDER_ID));
+                String type = cursor.getString(cursor.getColumnIndexOrThrow(KEY_MSG_TYPE));
+                String file = cursor.getString(cursor.getColumnIndexOrThrow(KEY_MSG_FILE));
 
                 boolean isMine = (senderId == myUserId);
-                // Sử dụng Constructor đúng với Model Message của bạn
-                Message msg = new Message(content, isMine, senderId);
+                Message msg = new Message(content, isMine, senderId, type, file);
                 list.add(msg);
             } while (cursor.moveToNext());
         }

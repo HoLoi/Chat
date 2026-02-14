@@ -1,14 +1,17 @@
 package com.example.chatrealtime.service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.example.chatrealtime.entity.TaiKhoan;
 import com.example.chatrealtime.entity.TinNhan;
 import com.example.chatrealtime.entity.TrangThaiTinNhan;
 import com.example.chatrealtime.entity.TrangThaiTinNhanId;
@@ -77,7 +80,7 @@ public class MessageService {
         }
 
         // Gửi push FCM cho các thành viên khác
-        notifyMembers(members, maTaiKhoanGui, maPhongChat, noiDung, loaiTinNhan);
+        notifyMembers(members, maTaiKhoanGui, maPhongChat, noiDung, loaiTinNhan, duongDanFile);
 
         return saved;
     }
@@ -89,17 +92,66 @@ public class MessageService {
         return tinNhanRepo.getMessages(maPhongChat, maTaiKhoan);
     }
 
+    public List<Map<String, Object>> getMessagesWithSender(
+            Integer maPhongChat,
+            Integer maTaiKhoan
+    ) {
+        List<TinNhan> raw = tinNhanRepo.getMessages(maPhongChat, maTaiKhoan);
+
+        Set<Integer> senderIds = raw.stream()
+                .map(TinNhan::getMaTaiKhoanGui)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Map<Integer, TaiKhoan> accountMap = taiKhoanRepo.findAllById(senderIds).stream()
+                .collect(Collectors.toMap(
+                        TaiKhoan::getMaTaiKhoan,
+                        tk -> tk
+                ));
+
+        return raw.stream()
+                .map(t -> {
+                    TaiKhoan tk = accountMap.get(t.getMaTaiKhoanGui());
+                    String tenNguoiGui = tk != null && tk.getNguoiDung() != null && tk.getNguoiDung().getTenNguoiDung() != null
+                            ? tk.getNguoiDung().getTenNguoiDung()
+                            : tk != null ? tk.getEmail() : "";
+                    String avatar = tk != null && tk.getNguoiDung() != null
+                            ? tk.getNguoiDung().getAnhDaiDien()
+                            : "";
+
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("maTinNhan", t.getMaTinNhan());
+                    m.put("maTaiKhoanGui", t.getMaTaiKhoanGui());
+                    m.put("maPhongChat", t.getMaPhongChat());
+                    m.put("noiDung", t.getNoiDung());
+                    m.put("loaiTinNhan", t.getLoaiTinNhan());
+                    m.put("duongDanFile", t.getDuongDanFile());
+                    m.put("tenNguoiGui", tenNguoiGui);
+                    m.put("anhDaiDienNguoiGui", avatar != null ? avatar : "");
+                    m.put("thoiGianGui", t.getThoiGianGui());
+                    return m;
+                })
+                .collect(Collectors.toList());
+    }
+
     private void notifyMembers(List<Integer> members,
                                Integer senderId,
                                Integer roomId,
                                String content,
-                               String type) {
+                               String type,
+                               String duongDanFile) {
 
-        String senderName = taiKhoanRepo.findById(senderId)
-                .map(tk -> tk.getNguoiDung() != null && tk.getNguoiDung().getTenNguoiDung() != null
-                        ? tk.getNguoiDung().getTenNguoiDung()
-                        : tk.getEmail())
-                .orElse("Tin nhan moi");
+        var senderInfo = taiKhoanRepo.findById(senderId)
+                .map(tk -> new Object() {
+                    final String ten = tk.getNguoiDung() != null && tk.getNguoiDung().getTenNguoiDung() != null
+                            ? tk.getNguoiDung().getTenNguoiDung()
+                            : tk.getEmail();
+                    final String avatar = tk.getNguoiDung() != null ? tk.getNguoiDung().getAnhDaiDien() : null;
+                })
+                .orElse(null);
+
+        String senderName = senderInfo != null ? senderInfo.ten : "Tin nhan moi";
+        String senderAvatar = senderInfo != null ? senderInfo.avatar : null;
 
         String roomName = phongChatRepo.findById(roomId)
                 .map(pc -> pc.getTenPhongChat())
@@ -120,19 +172,35 @@ public class MessageService {
 
         if (tokens.isEmpty()) return;
 
-        Map<String, String> data = Map.of(
-                "type", "chat_message",
-                "maPhongChat", String.valueOf(roomId),
-                "maTaiKhoanGui", String.valueOf(senderId),
-                "tenNguoiGui", senderName,
-                "roomName", roomName,
-                "noiDung", content != null ? content : "",
-                "loaiTinNhan", type != null ? type : "text"
-        );
+                String resolvedType = type != null ? type : "text";
+                String resolvedContent = content != null ? content : "";
 
-        // Tiêu đề dùng tên người gửi để notification hệ thống (nếu Android tự hiển thị) có đúng tên
-        String title = senderName;
-        String body = content != null ? content : "";
+                // Nếu là image/video thì body để gợi ý loại file
+                String body;
+                if (resolvedType.startsWith("image")) {
+                        body = "Đã gửi hình ảnh";
+                } else if (resolvedType.startsWith("video")) {
+                        body = "Đã gửi video";
+                } else {
+                        body = resolvedContent;
+                }
+
+                String filePath = duongDanFile != null ? duongDanFile : "";
+
+                Map<String, String> data = Map.of(
+                        "type", "chat_message",
+                        "maPhongChat", String.valueOf(roomId),
+                        "maTaiKhoanGui", String.valueOf(senderId),
+                        "tenNguoiGui", senderName,
+                        "anhDaiDienNguoiGui", senderAvatar != null ? senderAvatar : "",
+                        "roomName", roomName,
+                        "noiDung", resolvedContent,
+                        "loaiTinNhan", resolvedType,
+                        "duongDanFile", filePath
+                );
+
+                // Tiêu đề dùng tên người gửi để notification hệ thống (nếu Android tự hiển thị) có đúng tên
+                String title = senderName;
 
         fcmService.sendMulticast(tokens, title, body, data);
     }

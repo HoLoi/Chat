@@ -9,6 +9,7 @@ public class SocketMessage {
     public Integer maTaiKhoanGui;
     public String noiDung;
     public String loaiTinNhan;
+    public String duongDanFile;
 
     public Integer fromUser;
     public Integer toUser;

@@ -1,14 +1,15 @@
 package com.example.chatrealtime.websocket;
 
-import com.example.chatrealtime.dto.SocketMessage;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.LocalDateTime;
+
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
-import java.time.LocalDateTime;
+import com.example.chatrealtime.dto.SocketMessage;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Component
 public class ChatWebSocketHandler extends TextWebSocketHandler {
@@ -84,6 +85,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
                             public final Integer maTaiKhoanGui = data.maTaiKhoanGui;
                             public final String noiDung = data.noiDung;
                             public final String loaiTinNhan = data.loaiTinNhan;
+                            public final String duongDanFile = data.duongDanFile;
                             public final String thoiGianGui = LocalDateTime.now().toString();
                         }
                 )
