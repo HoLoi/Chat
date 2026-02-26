@@ -1,15 +1,17 @@
 package com.example.chatrealtime.controller;
 
-import com.example.chatrealtime.entity.BanBe;
-import com.example.chatrealtime.entity.BanBeId;
-import com.example.chatrealtime.repository.BanBeRepository;
-import com.example.chatrealtime.service.FriendService;
-import jakarta.transaction.Transactional;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.util.Map;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.chatrealtime.repository.BanBeRepository;
+import com.example.chatrealtime.service.FriendService;
 
 @RestController
 @RequestMapping("/api/friends")
@@ -21,6 +23,18 @@ public class FriendController {
 
         this.banBeRepo = banBeRepo;
         this.friendService = friendService;
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<?> searchFriends(
+            @RequestParam Integer maTaiKhoan,
+            @RequestParam String keyword
+    ) {
+        if (maTaiKhoan == null || maTaiKhoan <= 0) {
+            return ResponseEntity.badRequest().body(Map.of("status", "error", "message", "Thiếu mã tài khoản"));
+        }
+        var results = friendService.searchAcceptedFriends(maTaiKhoan, keyword);
+        return ResponseEntity.ok(Map.of("status", "success", "data", results));
     }
 
     @GetMapping
@@ -141,6 +155,16 @@ public class FriendController {
                     Map.of("status", "error", "message", e.getMessage())
             );
         }
+    }
+
+    @GetMapping("/suggest")
+    public ResponseEntity<?> suggest(@RequestParam Integer maTaiKhoan) {
+        return ResponseEntity.ok(
+                Map.of(
+                        "status", "success",
+                        "suggestions", banBeRepo.suggestFriends(maTaiKhoan)
+                )
+        );
     }
 
 

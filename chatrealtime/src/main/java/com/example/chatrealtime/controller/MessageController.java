@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,8 +14,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.example.chatrealtime.entity.TinNhan;
 import com.example.chatrealtime.service.MessageService;
+import com.example.chatrealtime.service.MessageService.SendMessageResult;
 
 @RestController
 @RequestMapping("/api/chat")
@@ -36,13 +37,43 @@ public class MessageController {
             return ResponseEntity.badRequest()
                     .body(Map.of("status", "error", "message", "Thiếu nội dung"));
         }
+        try {
+            SendMessageResult result = messageService.sendMessage(
+                    maPhongChat, maTaiKhoanGui,
+                    noiDung, loaiTinNhan, duongDanFile
+            );
 
-        TinNhan t = messageService.sendMessage(
-                maPhongChat, maTaiKhoanGui,
-                noiDung, loaiTinNhan, duongDanFile
-        );
+            if ("BANNED".equals(result.status())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of(
+                                "status", "BLOCK",
+                                "message", "Tài khoản đã bị khóa do vi phạm nhiều lần"
+                        ));
+            }
 
-        return ResponseEntity.ok(Map.of("status", "success", "message", t));
+            if ("BLOCK".equals(result.status())) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of(
+                                "status", "BLOCK",
+                                "message", "Tin nhắn vi phạm quy định",
+                                "score", result.decision().score()
+                        ));
+            }
+
+            String messageText = "CLEAN".equals(result.status())
+                    ? "Gửi tin nhắn thành công"
+                    : "Tin nhắn có nội dung nhạy cảm";
+
+            return ResponseEntity.ok(Map.of(
+                    "status", result.status(),
+                    "message", messageText,
+                    "score", result.decision().score(),
+                    "data", result.message()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("status", "error", "message", e.getMessage()));
+        }
     }
 
 
@@ -84,7 +115,7 @@ public class MessageController {
                         String fileUrl = "/uploads/chat/" + savedName;
 
                         // Lưu tin nhắn dạng file
-                        TinNhan t = messageService.sendMessage(
+                        SendMessageResult result = messageService.sendMessage(
                                         maPhongChat,
                                         maTaiKhoanGui,
                                         "",
@@ -92,13 +123,31 @@ public class MessageController {
                                         fileUrl
                         );
 
+                        if ("BANNED".equals(result.status())) {
+                                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                                                .body(Map.of(
+                                                                "status", "BLOCK",
+                                                                "message", "Tài khoản đã bị khóa do vi phạm nhiều lần"
+                                                ));
+                        }
+
+                        if ("BLOCK".equals(result.status())) {
+                                return ResponseEntity.badRequest()
+                                                .body(Map.of(
+                                                                "status", "BLOCK",
+                                                                "message", "Tin nhắn vi phạm quy định",
+                                                                "score", result.decision().score()
+                                                ));
+                        }
+
                         return ResponseEntity.ok(
                                         Map.of(
-                                                        "status", "success",
+                                                        "status", result.status(),
                                                         "loaiTinNhan", detectedType,
                                                         "duongDanFile", fileUrl,
                                                         "mimeType", mime,
-                                                        "message", t
+                                                        "score", result.decision().score(),
+                                                        "message", result.message()
                                         )
                         );
                 } catch (Exception e) {

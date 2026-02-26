@@ -1,8 +1,13 @@
 package com.example.chatrealtime.entity;
 
-import jakarta.persistence.*;
-
 import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "TINNHAN")
@@ -30,6 +35,12 @@ public class TinNhan {
 
     @Column(name = "loaiTinNhan")
     private String loaiTinNhan;
+
+    @Column(name = "trangThaiKiemDuyet")
+    private String trangThaiKiemDuyet;
+
+    @Column(name = "diemKiemDuyet")
+    private Double diemKiemDuyet;
 
     // ===== Getter / Setter =====
 
@@ -87,5 +98,21 @@ public class TinNhan {
 
     public void setLoaiTinNhan(String loaiTinNhan) {
         this.loaiTinNhan = loaiTinNhan;
+    }
+
+    public String getTrangThaiKiemDuyet() {
+        return trangThaiKiemDuyet;
+    }
+
+    public void setTrangThaiKiemDuyet(String trangThaiKiemDuyet) {
+        this.trangThaiKiemDuyet = trangThaiKiemDuyet;
+    }
+
+    public Double getDiemKiemDuyet() {
+        return diemKiemDuyet;
+    }
+
+    public void setDiemKiemDuyet(Double diemKiemDuyet) {
+        this.diemKiemDuyet = diemKiemDuyet;
     }
 }

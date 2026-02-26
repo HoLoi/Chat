@@ -40,13 +40,13 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
             // ==== chat_message ====
             case "chat_message":
-                manager.userRooms.forEach((uid, rid) -> {
-                    if (rid.equals(data.maPhongChat)) {
-                        WebSocketSession s = manager.users.get(uid);
-                        if (s != null && s.isOpen()) {
-                            try {
-                                sendChat(s, data);
-                            } catch (Exception ignored) {}
+                // Phát cho tất cả user đang kết nối (client tự lọc theo maPhongChat)
+                manager.users.forEach((uid, s) -> {
+                    if (s != null && s.isOpen()) {
+                        try {
+                            sendChat(s, data);
+                        } catch (Exception ignored) {
+                            // swallow để không làm gián đoạn vòng lặp broadcast
                         }
                     }
                 });

@@ -1,10 +1,16 @@
 package com.example.chatrealtime.service;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.stereotype.Service;
+
 import com.example.chatrealtime.entity.BanBe;
 import com.example.chatrealtime.entity.BanBeId;
 import com.example.chatrealtime.repository.BanBeRepository;
+
 import jakarta.transaction.Transactional;
-import org.springframework.stereotype.Service;
 
 @Service
 public class FriendService {
@@ -13,6 +19,12 @@ public class FriendService {
 
     public FriendService(BanBeRepository repo) {
         this.repo = repo;
+    }
+
+    public List<Map<String, Object>> searchAcceptedFriends(Integer myId, String keyword) {
+        if (myId == null || myId <= 0) return Collections.emptyList();
+        String kw = keyword != null ? keyword.trim() : "";
+        return repo.searchFriends(myId, kw);
     }
 
     @Transactional

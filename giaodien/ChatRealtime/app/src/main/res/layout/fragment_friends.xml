@@ -19,6 +19,7 @@
             android:src="@drawable/ic_search"/>
 
         <EditText
+            android:id="@+id/et_search_friend"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Tìm kiếm"/>
@@ -42,6 +43,18 @@
 
     </LinearLayout>
 
+    <TextView
+        android:id="@+id/tv_suggestion_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginTop="6dp"
+        android:text="Gợi ý kết bạn"
+        android:textStyle="bold"
+        android:textColor="@color/black"
+        android:visibility="gone" />
+
     <Button
         android:id="@+id/btn_loi_moi_ket_ban"
         android:layout_width="match_parent"
@@ -62,6 +75,28 @@
         android:layout_marginRight="10dp"
         android:layout_marginLeft="10dp"
         android:backgroundTint="#2196F3"
+        android:textColor="@color/white"
+        android:visibility="gone" />
+
+    <Button
+        android:id="@+id/btn_goi_y_ket_ban"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="10dp"
+        android:layout_marginLeft="10dp"
+        android:text="Gợi ý kết bạn"
+        android:backgroundTint="#4CAF50"
+        android:textColor="@color/white"
+        android:visibility="gone" />
+
+    <Button
+        android:id="@+id/btn_tao_nhom"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="10dp"
+        android:layout_marginLeft="10dp"
+        android:text="Tạo nhóm"
+        android:backgroundTint="#673AB7"
         android:textColor="@color/white"
         android:visibility="gone" />
 

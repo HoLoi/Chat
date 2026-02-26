@@ -1,8 +1,8 @@
 -- app_chat.sql
-CREATE DATABASE IF NOT EXISTS app_chat CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE app_chat;
+CREATE DATABASE IF NOT EXISTS app_chat2 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE app_chat2;
 
--- NGUOIDUNG
+-- NGUOIDUNG1
 CREATE TABLE IF NOT EXISTS NGUOIDUNG (
     maNguoiDung INT AUTO_INCREMENT PRIMARY KEY,
     tenNguoiDung varchar(100) NOT NULL,
@@ -18,8 +18,12 @@ CREATE TABLE IF NOT EXISTS TAIKHOAN (
     email VARCHAR(255) NOT NULL UNIQUE,
     matKhau VARCHAR(255) NOT NULL,
     ngayTao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    trangThai VARCHAR(50) DEFAULT 'offline',
+    trangThai VARCHAR(50) DEFAULT 'offline', -- offline, online, banned, locked
     token VARCHAR(255) DEFAULT NULL,
+    diemCanhCao INT DEFAULT 0,
+    soLanWarningHomNay INT DEFAULT 0,
+    ngayTinhWarning DATE DEFAULT NULL,
+    thoiGianKhoa DATETIME DEFAULT NULL,
     maNguoiDung INT,
     FOREIGN KEY (maNguoiDung) REFERENCES NGUOIDUNG(maNguoiDung)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -28,10 +32,14 @@ CREATE TABLE IF NOT EXISTS TAIKHOAN (
 CREATE TABLE IF NOT EXISTS PHONGCHAT (
     maPhongChat INT AUTO_INCREMENT PRIMARY KEY,
     tenPhongChat VARCHAR(100) NOT NULL,
+    kieuNhom TINYINT(1) DEFAULT 0, -- 0=public, 1=private
+    maTruongNhom INT DEFAULT NULL,
     loaiPhong TINYINT(1) DEFAULT 0,
+    anhDaiDien_URL VARCHAR(255) DEFAULT NULL,
     ngayTao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     maTaiKhoanTao INT,
-    FOREIGN KEY (maTaiKhoanTao) REFERENCES TAIKHOAN(maTaiKhoan)
+    FOREIGN KEY (maTaiKhoanTao) REFERENCES TAIKHOAN(maTaiKhoan),
+    FOREIGN KEY (maTruongNhom) REFERENCES TAIKHOAN(maTaiKhoan)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- THANHVIEN_PHONG
@@ -40,10 +48,13 @@ CREATE TABLE IF NOT EXISTS THANHVIEN_PHONG (
     maTaiKhoan INT,
     vaiTro VARCHAR(50) DEFAULT 'member',
     ngayThamGia TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    trangThaiThamGia VARCHAR(20) DEFAULT 'approved', -- pending, approved, rejected
+    nguoiDuyet INT DEFAULT NULL,
     ngayXoa TIMESTAMP NULL DEFAULT NULL,
     PRIMARY KEY (maPhongChat, maTaiKhoan),
     FOREIGN KEY (maPhongChat) REFERENCES PHONGCHAT(maPhongChat) ON DELETE CASCADE,
-    FOREIGN KEY (maTaiKhoan) REFERENCES TAIKHOAN(maTaiKhoan) ON DELETE CASCADE
+    FOREIGN KEY (maTaiKhoan) REFERENCES TAIKHOAN(maTaiKhoan) ON DELETE CASCADE,
+    FOREIGN KEY (nguoiDuyet) REFERENCES TAIKHOAN(maTaiKhoan)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- TINNHAN
@@ -55,6 +66,8 @@ CREATE TABLE IF NOT EXISTS TINNHAN (
     maTaiKhoanGui INT,
     maPhongChat INT,
     loaiTinNhan varchar(50) DEFAULT 'text',
+    trangThaiKiemDuyet VARCHAR(20) DEFAULT 'clean', -- clean, warning, blocked, hidden, flagged
+    diemKiemDuyet DECIMAL(5,2) DEFAULT 0.00,
     FOREIGN KEY (maTaiKhoanGui) REFERENCES TAIKHOAN(maTaiKhoan) ON DELETE SET NULL,
     FOREIGN KEY (maPhongChat) REFERENCES PHONGCHAT(maPhongChat) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -68,6 +81,38 @@ CREATE TABLE IF NOT EXISTS TRANGTHAI_TINNHAN (
     PRIMARY KEY (maTinNhan, maTaiKhoan),
     FOREIGN KEY (maTinNhan) REFERENCES TINNHAN(maTinNhan) ON DELETE CASCADE,
     FOREIGN KEY (maTaiKhoan) REFERENCES TAIKHOAN(maTaiKhoan) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Yêu cầu tham gia nhóm (phục vụ private group hoặc yêu cầu vào public có kiểm duyệt)
+CREATE TABLE IF NOT EXISTS YEUCAU_THAMGIA_NHOM (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    maPhongChat INT NOT NULL,
+    maTaiKhoan INT NOT NULL,
+    trangThai VARCHAR(20) DEFAULT 'pending', -- pending, approved, rejected
+    lyDoTuChoi VARCHAR(255) DEFAULT NULL,
+    nguoiXuLy INT DEFAULT NULL,
+    ngayTao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ngayXuLy TIMESTAMP NULL DEFAULT NULL,
+    FOREIGN KEY (maPhongChat) REFERENCES PHONGCHAT(maPhongChat) ON DELETE CASCADE,
+    FOREIGN KEY (maTaiKhoan) REFERENCES TAIKHOAN(maTaiKhoan) ON DELETE CASCADE,
+    FOREIGN KEY (nguoiXuLy) REFERENCES TAIKHOAN(maTaiKhoan)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Log kiểm duyệt AI
+CREATE TABLE IF NOT EXISTS MODERATION_LOG (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    maTinNhan INT,
+    maPhongChat INT,
+    maTaiKhoanGui INT,
+    nhanViPham VARCHAR(100) DEFAULT NULL, -- hate, sexual, violence, spam...
+    mucDoViPham VARCHAR(20) DEFAULT NULL, -- mild, medium, severe
+    diemScore DECIMAL(5,2) DEFAULT 0.00,
+    hanhDong VARCHAR(20) DEFAULT 'warn', -- warn, block, hide, flag, ban
+    noiDungGoc TEXT,
+    thoiGian TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (maTinNhan) REFERENCES TINNHAN(maTinNhan) ON DELETE SET NULL,
+    FOREIGN KEY (maPhongChat) REFERENCES PHONGCHAT(maPhongChat) ON DELETE SET NULL,
+    FOREIGN KEY (maTaiKhoanGui) REFERENCES TAIKHOAN(maTaiKhoan) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- BANBE
@@ -84,3 +129,6 @@ CREATE TABLE IF NOT EXISTS BANBE (
 -- INDEXES
 CREATE INDEX idx_tinNhan_maPhongChat ON TINNHAN(maPhongChat);
 CREATE INDEX idx_thanhVienPhong_maTaiKhoan ON THANHVIEN_PHONG(maTaiKhoan);
+CREATE INDEX idx_thanhVienPhong_trangThai ON THANHVIEN_PHONG(trangThaiThamGia);
+CREATE INDEX idx_yeucau_phong ON YEUCAU_THAMGIA_NHOM(maPhongChat, trangThai);
+CREATE INDEX idx_moderation_tinNhan ON MODERATION_LOG(maTinNhan);

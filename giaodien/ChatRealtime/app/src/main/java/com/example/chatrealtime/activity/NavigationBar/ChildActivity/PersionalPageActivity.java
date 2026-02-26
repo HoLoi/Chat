@@ -379,6 +379,7 @@ public class PersionalPageActivity extends AppCompatActivity {
         intent.putExtra("maPhong", roomId);
         intent.putExtra("friendId", friendId);
         intent.putExtra("friendName", tvName.getText().toString());
+        intent.putExtra("roomName", tvName.getText().toString());
         startActivity(intent);
     }
 

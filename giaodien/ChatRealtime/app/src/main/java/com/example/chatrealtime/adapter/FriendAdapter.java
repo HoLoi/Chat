@@ -83,9 +83,12 @@ public class FriendAdapter extends BaseAdapter {
 //            holder.ivFriendAvatar.setImageResource(R.drawable.avatar_default);
 //        }
 
-        String name = friend.optString("tenNguoiDung", "").trim();
+        String displayName = friend.optString("tenNguoiDung", "").trim();
+        if (displayName.isEmpty()) {
+            displayName = friend.optString("tenPhongChat", "").trim();
+        }
 
-        if (name.isEmpty()) {
+        if (displayName.isEmpty()) {
             // Ẩn cả avatar lẫn tên
             //holder.tvFriendName.setVisibility(View.GONE);
             //holder.ivFriendAvatar.setVisibility(View.GONE);
@@ -94,7 +97,8 @@ public class FriendAdapter extends BaseAdapter {
             convertView.setVisibility(View.GONE);
         } else {
             holder.tvFriendName.setVisibility(View.VISIBLE);
-            holder.tvFriendName.setText(name);
+            boolean isSuggestion = friend.optBoolean("suggestion", false);
+            holder.tvFriendName.setText(isSuggestion ? displayName + " (Gợi ý)" : displayName);
 
             holder.ivFriendAvatar.setVisibility(View.VISIBLE);
 //            String avatarUrl = friend.optString("anhDaiDien_URL", "");
@@ -109,16 +113,9 @@ public class FriendAdapter extends BaseAdapter {
 //            }
 
             String avatarPath = friend.optString("anhDaiDien_URL", "");
+            String fullUrl = normalizeAvatar(avatarPath);
 
-            if (!avatarPath.isEmpty()) {
-                String fullUrl;
-
-                if (avatarPath.startsWith("http")) {
-                    fullUrl = avatarPath;
-                } else {
-                    fullUrl = Constants.IMAGE_BASE_URL + avatarPath;
-                }
-
+            if (!fullUrl.isEmpty()) {
                 Glide.with(context)
                         .load(fullUrl)
                         .placeholder(R.drawable.avatar_default)
@@ -130,7 +127,16 @@ public class FriendAdapter extends BaseAdapter {
 
         }
 
-        convertView.setOnClickListener(v -> handleFriendClick(friend, name));
+        final String nameForClick = displayName;
+
+        convertView.setOnClickListener(v -> {
+            boolean isSuggestion = friend.optBoolean("suggestion", false);
+            if (isSuggestion) {
+                sendFriendRequest(friend, nameForClick);
+            } else {
+                handleFriendClick(friend, nameForClick);
+            }
+        });
 
         return convertView;
     }
@@ -138,8 +144,17 @@ public class FriendAdapter extends BaseAdapter {
     // ✅ Khi click vào bạn bè
     private void handleFriendClick(JSONObject friend, String friendName) {
         try {
-            int friendId = friend.getInt("maTaiKhoan");
+            String type = friend.optString("type", "friend");
             SessionManager sm = new SessionManager(context);
+
+            if ("room".equals(type)) {
+                int roomId = friend.optInt("id", -1);
+                if (roomId <= 0) return;
+                openChat(roomId, -1, friendName);
+                return;
+            }
+
+            int friendId = friend.optInt("maTaiKhoan", friend.optInt("id", -1));
 //            String token = sm.getToken();
 //
 //            if (token == null || token.isEmpty()) {
@@ -149,7 +164,7 @@ public class FriendAdapter extends BaseAdapter {
 
             Log.d(TAG, "Click bạn bè → friendId=" + friendId);
 
-            String url = Constants.BASE_URL + "chat/create-room";
+            String url = Constants.BASE_URL + "chat/private/" + friendId;
             Log.d(TAG, "Gửi request: " + url);
 
             StringRequest req = new StringRequest(Request.Method.POST, url,
@@ -157,30 +172,9 @@ public class FriendAdapter extends BaseAdapter {
                         Log.d(TAG, "Phản hồi từ server: " + response);
                         try {
                             JSONObject obj = new JSONObject(response);
-
-                            // ✅ Nếu có mã phòng → vào phòng
-                            if (obj.has("maPhongChat")) {
-                                int maPhong = obj.getInt("maPhongChat");
-                                Log.i(TAG, "✅ Vào phòng có sẵn → maPhong=" + maPhong);
+                            int maPhong = obj.optInt("roomId", -1);
+                            if (maPhong > 0) {
                                 openChat(maPhong, friendId, friendName);
-                                return;
-                            }
-
-                            // ✅ Nếu có danh sách rooms → vào phòng đầu tiên
-                            if (obj.has("rooms")) {
-                                JSONArray rooms = obj.getJSONArray("rooms");
-                                if (rooms.length() > 0) {
-                                    JSONObject firstRoom = rooms.getJSONObject(0);
-                                    int maPhong = firstRoom.getInt("maPhongChat");
-                                    Log.i(TAG, "✅ Đã có phòng → maPhong=" + maPhong);
-                                    openChat(maPhong, friendId, friendName);
-                                } else {
-                                    Log.i(TAG, "⚙️ Chưa có phòng → tạo mới");
-                                    createNewRoom(friendId, friendName);
-                                }
-                            } else {
-                                Log.i(TAG, "⚙️ Không có rooms → tạo mới");
-                                createNewRoom(friendId, friendName);
                             }
 
                         } catch (Exception e) {
@@ -204,10 +198,7 @@ public class FriendAdapter extends BaseAdapter {
                 @Override
                 protected Map<String, String> getParams() {
                     Map<String, String> params = new HashMap<>();
-                    params.put("members", String.valueOf(friendId)); // 1-1 chat
-                    params.put("currentUserId", String.valueOf(
-                            new SessionManager(context).getMaTaiKhoan()
-                    ));
+                    params.put("myId", String.valueOf(sm.getMaTaiKhoan()));
                     return params;
                 }
 
@@ -271,17 +262,55 @@ public class FriendAdapter extends BaseAdapter {
         Volley.newRequestQueue(context).add(req);
     }
 
+    private void sendFriendRequest(JSONObject friend, String friendName) {
+        try {
+            int friendId = friend.getInt("maTaiKhoan");
+            SessionManager sm = new SessionManager(context);
+            String url = Constants.BASE_URL + "friends/send-request";
+            StringRequest req = new StringRequest(Request.Method.POST, url,
+                    response -> {
+                        Toast.makeText(context, "Đã gửi lời mời tới " + friendName, Toast.LENGTH_SHORT).show();
+                    },
+                    error -> Toast.makeText(context, "Gửi lời mời thất bại", Toast.LENGTH_SHORT).show()
+            ) {
+                @Override
+                protected Map<String, String> getParams() {
+                    Map<String, String> params = new HashMap<>();
+                    params.put("myId", String.valueOf(sm.getMaTaiKhoan()));
+                    params.put("friendId", String.valueOf(friendId));
+                    return params;
+                }
+            };
+
+            Volley.newRequestQueue(context).add(req);
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Lỗi gửi lời mời: " + e.getMessage(), e);
+        }
+    }
+
     // ✅ Mở phòng chat
     private void openChat(int maPhong, int friendId, String friendName) {
         Intent intent = new Intent(context, ChatActivity.class);
         intent.putExtra("maPhong", maPhong);
         intent.putExtra("friendId", friendId);
         intent.putExtra("friendName", friendName);
+        intent.putExtra("roomName", friendName);
         context.startActivity(intent);
     }
 
     static class ViewHolder {
         ImageView ivFriendAvatar;
         TextView tvFriendName;
+    }
+
+    private String normalizeAvatar(String raw) {
+        if (raw == null) return "";
+        String trimmed = raw.trim();
+        if (trimmed.isEmpty() || "null".equalsIgnoreCase(trimmed) || "/null".equalsIgnoreCase(trimmed)) {
+            return "";
+        }
+        if (trimmed.startsWith("http")) return trimmed;
+        if (trimmed.startsWith("/")) return Constants.IMAGE_BASE_URL + trimmed;
+        return Constants.IMAGE_BASE_URL + "/" + trimmed;
     }
 }

@@ -4,12 +4,16 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -22,9 +26,14 @@ import com.android.volley.toolbox.Volley;
 import com.example.chatrealtime.Constants;
 import com.example.chatrealtime.R;
 import com.example.chatrealtime.activity.NavigationBar.ChildActivity.AddFriendActivity;
+import com.example.chatrealtime.activity.NavigationBar.ChildActivity.ChatActivity;
+import com.example.chatrealtime.activity.NavigationBar.ChildActivity.CreateGroupActivity;
 import com.example.chatrealtime.activity.NavigationBar.ChildActivity.RequestAddFriendActivity;
+import com.example.chatrealtime.activity.NavigationBar.ChildActivity.SuggestFriendsActivity;
 import com.example.chatrealtime.adapter.FriendAdapter;
+import com.example.chatrealtime.adapter.RoomAdapter;
 import com.example.chatrealtime.database.ChatDatabaseHelper;
+import com.example.chatrealtime.model.Room;
 import com.example.chatrealtime.model.SessionManager;
 import com.example.chatrealtime.model.WebSocketService;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -34,14 +43,18 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class FriendsFragment extends Fragment {
 
-    private Button btnBanBe, btnNhom, btnThemBanBe, btnLoiMoiKetBan;
+    private Button btnBanBe, btnNhom, btnThemBanBe, btnLoiMoiKetBan, btnGoiYKetBan, btnTaoNhom;
     private ListView listView;
     private ArrayAdapter<String> adapter;
     private ArrayList<String> dataList;
     private ChatDatabaseHelper dbHelper;
+    private int maTaiKhoan;
+    private TextView tvSuggestionHeader;
+    private EditText etSearch;
 
     @Nullable
     @Override
@@ -53,10 +66,14 @@ public class FriendsFragment extends Fragment {
         btnThemBanBe = view.findViewById(R.id.btn_them_ban_be);
         btnLoiMoiKetBan = view.findViewById(R.id.btn_loi_moi_ket_ban);
         btnNhom = view.findViewById(R.id.btn_nhom);
+        btnGoiYKetBan = view.findViewById(R.id.btn_goi_y_ket_ban);
+        btnTaoNhom = view.findViewById(R.id.btn_tao_nhom);
         listView = view.findViewById(R.id.list_view);
+        tvSuggestionHeader = view.findViewById(R.id.tv_suggestion_header);
+        etSearch = view.findViewById(R.id.et_search_friend);
 
         SessionManager sessionManager = new SessionManager(getContext());
-        int maTaiKhoan = sessionManager.getMaTaiKhoan();
+        maTaiKhoan = sessionManager.getMaTaiKhoan();
         Log.d("FriendsFragment", "Mã tài khoản hiện tại: " + maTaiKhoan);
 
         dbHelper = new ChatDatabaseHelper(getContext());
@@ -78,9 +95,19 @@ public class FriendsFragment extends Fragment {
         btnNhom.setOnClickListener(v -> {
             // xoa danh sach ban be neu co
             listView.setAdapter(null);
-            // load lai danh sach nhom
-            loadDanhSachNhom();
+            loadDanhSachNhom(maTaiKhoan);
             setTabSelected(false);
+        });
+
+        // Khi nhấn "Gợi ý kết bạn"
+        btnGoiYKetBan.setOnClickListener(v -> {
+            Intent intent = new Intent(getContext(), SuggestFriendsActivity.class);
+            startActivity(intent);
+        });
+
+        btnTaoNhom.setOnClickListener(v -> {
+            Intent intent = new Intent(getContext(), CreateGroupActivity.class);
+            startActivity(intent);
         });
 
         // Xử lý sự kiện "Thêm bạn bè"
@@ -118,6 +145,25 @@ public class FriendsFragment extends Fragment {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        });
+
+        // Tìm kiếm realtime
+        etSearch.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                String keyword = s.toString().trim();
+                if (keyword.isEmpty()) {
+                    loadDanhSachBanBe(maTaiKhoan);
+                } else {
+                    searchFriendOrRoom(keyword);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
         });
 
 
@@ -160,6 +206,9 @@ public class FriendsFragment extends Fragment {
 
     // ✅ API lấy danh sách bạn bè và tích hợp Offline
     private void loadDanhSachBanBe(int maTaiKhoan) {
+        tvSuggestionHeader.setVisibility(View.GONE);
+        etSearch.clearFocus();
+
         // BƯỚC 1: Load dữ liệu OFFLINE từ SQLite trước (Hiển thị ngay lập tức)
         ArrayList<JSONObject> offlineList = dbHelper.getFriends();
         if (!offlineList.isEmpty()) {
@@ -237,20 +286,129 @@ public class FriendsFragment extends Fragment {
                 error -> error.printStackTrace()
         );
 
+        Volley.newRequestQueue(requireContext()).add(request);
+    }
+
+    private void searchFriendOrRoom(String keyword) {
+        String url = Constants.BASE_URL + "chat/search?myId=" + maTaiKhoan + "&keyword=" + keyword;
+
+        JsonObjectRequest req = new JsonObjectRequest(Request.Method.GET, url, null,
+                response -> {
+                    try {
+                        if (!response.optString("status").equals("success")) return;
+
+                        JSONArray arr = response.optJSONArray("results");
+                        if (arr == null) return;
+
+                        ArrayList<JSONObject> searchList = new ArrayList<>();
+                        for (int i = 0; i < arr.length(); i++) {
+                            JSONObject item = arr.getJSONObject(i);
+                            searchList.add(item);
+                        }
+
+                        listView.setAdapter(new FriendAdapter(requireContext(), searchList));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                },
+                error -> Log.e("FriendsFragment", "Search error: " + error.toString())
+        );
+
+        Volley.newRequestQueue(requireContext()).add(req);
+    }
+
+
+
+    private void loadDanhSachNhom(int maTaiKhoan) {
+        tvSuggestionHeader.setVisibility(View.VISIBLE);
+        tvSuggestionHeader.setText("Danh sách nhóm của bạn");
+
+        String url = Constants.BASE_URL + "chat/rooms?maTaiKhoan=" + maTaiKhoan;
+
+        JsonObjectRequest request = new JsonObjectRequest(
+                Request.Method.GET,
+                url,
+                null,
+                response -> {
+                    try {
+                        if (!"success".equals(response.optString("status"))) return;
+                        JSONArray arr = response.optJSONArray("rooms");
+                        List<Room> groups = new ArrayList<>();
+                        if (arr != null) {
+                            for (int i = 0; i < arr.length(); i++) {
+                                JSONObject o = arr.getJSONObject(i);
+                                int loaiPhong = o.optInt("loaiPhong", 0);
+                                if (loaiPhong != 1) continue; // chỉ lấy group
+
+                                int id = o.optInt("id", -1);
+                                String tenPhong = o.optString("tenPhongChat", "Nhóm");
+                                String lastMsg = o.optString("lastMessage", "");
+                                String avatar = o.optString("anhDaiDien_URL", "");
+
+                                Room r = new Room(id, tenPhong, lastMsg, avatar);
+                                r.setUnreadCount(o.optInt("unreadCount", 0));
+                                groups.add(r);
+                            }
+                        }
+
+                        if (groups.isEmpty()) {
+                            tvSuggestionHeader.setText("Chưa có nhóm nào, nhấn Tạo nhóm để bắt đầu");
+                            ArrayAdapter<String> emptyAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, java.util.Collections.singletonList("Không có nhóm để hiển thị"));
+                            listView.setAdapter(emptyAdapter);
+                            Toast.makeText(requireContext(), "Chưa có nhóm nào", Toast.LENGTH_SHORT).show();
+                        } else {
+                            RoomAdapter adapter = new RoomAdapter(requireContext(), groups);
+                            listView.setAdapter(adapter);
+
+                            listView.setOnItemClickListener((parent, view1, position, id) -> {
+                                Room room = groups.get(position);
+                                Intent intent = new Intent(getContext(), ChatActivity.class);
+                                intent.putExtra("maPhong", room.getId());
+                                intent.putExtra("roomName", room.getName());
+                                startActivity(intent);
+                            });
+                        }
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                },
+                error -> error.printStackTrace()
+        );
 
         Volley.newRequestQueue(requireContext()).add(request);
     }
 
 
+    private void loadGoiYBanBe(int maTaiKhoan) {
+        String url = Constants.BASE_URL + "friends/suggest?maTaiKhoan=" + maTaiKhoan;
+        tvSuggestionHeader.setVisibility(View.VISIBLE);
+        tvSuggestionHeader.setText("Gợi ý kết bạn (nhấn vào để gửi lời mời)");
+        JsonObjectRequest request = new JsonObjectRequest(
+                Request.Method.GET,
+                url,
+                null,
+                response -> {
+                    try {
+                        if (!"success".equals(response.optString("status"))) return;
+                        JSONArray arr = response.optJSONArray("suggestions");
+                        ArrayList<JSONObject> list = new ArrayList<>();
+                        if (arr != null) {
+                            for (int i = 0; i < arr.length(); i++) {
+                                JSONObject o = arr.getJSONObject(i);
+                                o.put("suggestion", true);
+                                list.add(o);
+                            }
+                        }
+                        listView.setAdapter(new FriendAdapter(requireContext(), list));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                },
+                error -> error.printStackTrace()
+        );
 
-    private void loadDanhSachNhom() {
-        dataList = new ArrayList<>();
-        dataList.add("Nhóm lớp 12A");
-        dataList.add("CLB Android Dev");
-        dataList.add("Đội bóng DNC");
-
-        adapter = new ArrayAdapter<>(getContext(), android.R.layout.simple_list_item_1, dataList);
-        listView.setAdapter(adapter);
+        Volley.newRequestQueue(requireContext()).add(request);
     }
 
 //    // Hàm đổi màu tab theo Zalo-style
@@ -286,6 +444,9 @@ public class FriendsFragment extends Fragment {
             // Hiện nút Thêm bạn bè và Lời mời kết bạn
             btnThemBanBe.setVisibility(View.VISIBLE);
             btnLoiMoiKetBan.setVisibility(View.VISIBLE);
+            btnGoiYKetBan.setVisibility(View.VISIBLE);
+            btnTaoNhom.setVisibility(View.GONE);
+            tvSuggestionHeader.setVisibility(View.GONE);
 
         } else {
             btnNhom.setBackgroundTintList(getResources().getColorStateList(R.color.blue));
@@ -297,6 +458,8 @@ public class FriendsFragment extends Fragment {
             // Ẩn nút Thêm bạn bè và Lời mời kết bạn
             btnThemBanBe.setVisibility(View.GONE);
             btnLoiMoiKetBan.setVisibility(View.GONE);
+            btnGoiYKetBan.setVisibility(View.GONE);
+            btnTaoNhom.setVisibility(View.VISIBLE);
         }
     }
 }

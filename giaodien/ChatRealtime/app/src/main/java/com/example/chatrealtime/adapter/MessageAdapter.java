@@ -4,6 +4,7 @@ import android.app.DownloadManager;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Environment;
@@ -26,6 +27,7 @@ import com.bumptech.glide.request.transition.Transition;
 import com.example.chatrealtime.R;
 import com.example.chatrealtime.Constants;
 import com.example.chatrealtime.model.Message;
+import com.example.chatrealtime.model.MessageModerationStatus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,9 +66,13 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
         String type = msg.getLoaiTinNhan() != null ? msg.getLoaiTinNhan() : "text";
         String fileUrl = msg.getDuongDanFile();
         boolean isMine = msg.isMine();
+        MessageModerationStatus moderationStatus = msg.getModerationStatus() != null ? msg.getModerationStatus() : MessageModerationStatus.CLEAN;
 
         holder.mediaContainer.setVisibility(View.GONE);
         holder.txtMessage.setVisibility(View.VISIBLE);
+
+        int warningColor = ContextCompat.getColor(context, R.color.warning_soft_yellow);
+        holder.txtMessage.setBackgroundColor(moderationStatus == MessageModerationStatus.WARNING ? warningColor : Color.TRANSPARENT);
 
         String displayText = msg.getNoiDung() != null ? msg.getNoiDung() : "";
 

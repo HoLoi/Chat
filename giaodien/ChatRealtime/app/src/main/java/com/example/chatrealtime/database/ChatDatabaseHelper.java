@@ -228,11 +228,16 @@ public class ChatDatabaseHelper extends SQLiteOpenHelper {
             db.execSQL("DELETE FROM " + TABLE_FRIENDS);
             for (JSONObject friend : friendsList) {
                 ContentValues values = new ContentValues();
-                // Map dữ liệu từ JSON API sang cột SQLite
-                values.put(KEY_FRIEND_ID, friend.optInt("maNguoiDung"));
-                values.put(KEY_FRIEND_NAME, friend.optString("hoTen"));
-                values.put(KEY_FRIEND_AVATAR, friend.optString("anhDaiDien_URL"));
-                db.insert(TABLE_FRIENDS, null, values);
+                int id = friend.optInt("maTaiKhoan", friend.optInt("maNguoiDung", -1));
+                if (id <= 0) continue; // bỏ qua nếu không có mã tài khoản hợp lệ
+
+                String avatar = friend.optString("anhDaiDien_URL", "");
+                if ("null".equalsIgnoreCase(avatar)) avatar = "";
+
+                values.put(KEY_FRIEND_ID, id);
+                values.put(KEY_FRIEND_NAME, friend.optString("hoTen", friend.optString("tenNguoiDung", "")));
+                values.put(KEY_FRIEND_AVATAR, avatar);
+                db.insertWithOnConflict(TABLE_FRIENDS, null, values, SQLiteDatabase.CONFLICT_REPLACE);
             }
             db.setTransactionSuccessful();
         } catch (Exception e) {

@@ -15,6 +15,7 @@ import androidx.annotation.Nullable;
 import com.android.volley.Request;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.bumptech.glide.Glide;
 import com.example.chatrealtime.Constants;
 import com.example.chatrealtime.R;
 import com.example.chatrealtime.model.FriendRequest;
@@ -49,10 +50,23 @@ public class FriendRequestAdapter extends ArrayAdapter<FriendRequest> {
         FriendRequest req = list.get(position);
 
         TextView tvName = convertView.findViewById(R.id.tvRequestName);
+        com.google.android.material.imageview.ShapeableImageView ivAvatar = convertView.findViewById(R.id.ivAvatar);
         Button btnAccept = convertView.findViewById(R.id.btnAccept);
         Button btnReject = convertView.findViewById(R.id.btnReject);
 
         tvName.setText(req.getTenNguoiGui());
+
+        String avatar = req.getAvatarUrl();
+        if (avatar != null && !avatar.isEmpty()) {
+            String full = avatar.startsWith("http") ? avatar : Constants.IMAGE_BASE_URL + avatar;
+            Glide.with(context)
+                    .load(full)
+                    .placeholder(R.drawable.avatar_default)
+                    .error(R.drawable.avatar_default)
+                    .into(ivAvatar);
+        } else {
+            ivAvatar.setImageResource(R.drawable.avatar_default);
+        }
 
         btnAccept.setOnClickListener(v -> handleRequest(req.getMaTaiKhoanGui(), "chap_nhan", position));
         btnReject.setOnClickListener(v -> handleRequest(req.getMaTaiKhoanGui(), "tu_choi", position));

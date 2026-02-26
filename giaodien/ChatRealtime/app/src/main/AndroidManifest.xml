@@ -33,6 +33,12 @@
             android:name=".activity.NavigationBar.ChildActivity.PersionalPageActivity"
             android:exported="false" />
         <activity
+            android:name=".activity.NavigationBar.ChildActivity.SuggestFriendsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.NavigationBar.ChildActivity.CreateGroupActivity"
+            android:exported="false" />
+        <activity
             android:name=".activity.NavigationBar.ChildActivity.MenuChatActivity"
             android:exported="false" />
         <activity

@@ -77,21 +77,14 @@ public class RoomAdapter extends BaseAdapter {
 //            holder.ivRoomAvatar.setImageResource(R.drawable.avatar_default);
 //        }
 
-        String avatarUrl = room.getImageUrl();
+        String avatarUrl = normalizeAvatar(room.getImageUrl());
 
-        if (avatarUrl != null && !avatarUrl.isEmpty()) {
-
-            // Nếu backend trả path tương đối: /uploads/avatars/xxx.jpg
-            if (avatarUrl.startsWith("/")) {
-                avatarUrl = Constants.IMAGE_BASE_URL + avatarUrl;
-            }
-
+        if (!avatarUrl.isEmpty()) {
             Glide.with(context)
                     .load(avatarUrl)
                     .placeholder(R.drawable.avatar_default)
                     .error(R.drawable.avatar_default)
                     .into(holder.ivRoomAvatar);
-
         } else {
             holder.ivRoomAvatar.setImageResource(R.drawable.avatar_default);
         }
@@ -129,5 +122,17 @@ public class RoomAdapter extends BaseAdapter {
     static class ViewHolder {
         TextView txtRoomName, txtLastMessage, txtUnread;
         ShapeableImageView ivRoomAvatar;
+    }
+
+    private String normalizeAvatar(String raw) {
+        if (raw == null) return "";
+        String trimmed = raw.trim();
+        if (trimmed.isEmpty() || "null".equalsIgnoreCase(trimmed) || "/null".equalsIgnoreCase(trimmed)) {
+            return "";
+        }
+        if (trimmed.startsWith("/")) {
+            return Constants.IMAGE_BASE_URL + trimmed;
+        }
+        return trimmed;
     }
 }

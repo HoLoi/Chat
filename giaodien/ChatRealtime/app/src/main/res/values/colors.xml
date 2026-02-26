@@ -14,4 +14,5 @@
     <color name="gray">#9E9D9D</color>
     <color name="purple_700">#6200EE</color>
     <color name="dark_gray">#A9A9A9</color>
+    <color name="warning_soft_yellow">#FFF5CC</color>
 </resources>

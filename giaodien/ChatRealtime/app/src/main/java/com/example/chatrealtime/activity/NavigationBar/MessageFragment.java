@@ -5,6 +5,8 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.*;
 import android.widget.*;
+import android.text.Editable;
+import android.text.TextWatcher;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -27,6 +29,8 @@ public class MessageFragment extends Fragment {
     private RoomAdapter roomAdapter;
     private List<Room> roomList;
     private ChatDatabaseHelper dbHelper;
+    private EditText etSearch;
+    private ArrayList<JSONObject> searchResults = new ArrayList<>();
 
     private static final String TAG = "MessageFragment";
 
@@ -39,6 +43,7 @@ public class MessageFragment extends Fragment {
         View root = inflater.inflate(R.layout.fragment_message, container, false);
 
         listViewPhongchat = root.findViewById(R.id.lv_phongchat);
+        etSearch = root.findViewById(R.id.et_search_message);
         roomList = new ArrayList<>();
         roomAdapter = new RoomAdapter(requireContext(), roomList);
         listViewPhongchat.setAdapter(roomAdapter);
@@ -59,6 +64,27 @@ public class MessageFragment extends Fragment {
 
         // BƯỚC 2: Gọi API lấy dữ liệu mới nhất
         loadRoomsFromApi();
+
+        // Search realtime
+        etSearch.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                String kw = s.toString().trim();
+                if (kw.isEmpty()) {
+                    searchResults.clear();
+                    listViewPhongchat.setAdapter(roomAdapter);
+                    roomAdapter.notifyDataSetChanged();
+                } else {
+                    searchRooms(kw, maTaiKhoan);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
 
         // Kết nối WebSocket
         WebSocketService ws = WebSocketService.getInstance();
@@ -86,21 +112,29 @@ public class MessageFragment extends Fragment {
 
         // Khi click phòng → mở ChatActivity
         listViewPhongchat.setOnItemClickListener((parent, view, position, id) -> {
+            if (!searchResults.isEmpty()) {
+                JSONObject obj = searchResults.get(position);
+                String type = obj.optString("type", "room");
+                int targetId = obj.optInt("id", obj.optInt("maTaiKhoan", -1));
+                String name = obj.optString("tenPhongChat", obj.optString("tenNguoiDung", ""));
+                if (targetId <= 0) return;
+                if ("room".equals(type)) {
+                    openRoom(targetId, name);
+                } else {
+                    openPrivateChat(targetId, name);
+                }
+                return;
+            }
+
             Room room = roomList.get(position);
 
-            // 1. Reset số tin chưa đọc về 0 trong Model (Local)
             room.resetUnread();
-
-            // 2. Cập nhật giao diện Adapter để mất số màu đỏ ngay lập tức
             roomAdapter.notifyDataSetChanged();
-
-            // (MỚI) 3. Gọi API báo cho Server biết đã đọc tin
             markAsReadOnServer(room.getId());
 
-            // 4. Mở màn hình ChatActivity
             Intent intent = new Intent(requireContext(), ChatActivity.class);
             intent.putExtra("maPhong", room.getId());
-            intent.putExtra("roomName", room.getName()); // Nên truyền thêm tên phòng
+            intent.putExtra("roomName", room.getName());
             startActivity(intent);
         });
 
@@ -145,6 +179,68 @@ public class MessageFragment extends Fragment {
                 })
                 .setNegativeButton("Hủy", null)
                 .show();
+    }
+
+    private void openRoom(int roomId, String roomName) {
+        Intent intent = new Intent(requireContext(), ChatActivity.class);
+        intent.putExtra("maPhong", roomId);
+        intent.putExtra("roomName", roomName);
+        startActivity(intent);
+    }
+
+    private void openPrivateChat(int friendId, String friendName) {
+        String url = Constants.BASE_URL + "chat/private/" + friendId;
+        SessionManager sm = new SessionManager(requireContext());
+
+        StringRequest req = new StringRequest(Request.Method.POST, url,
+                resp -> {
+                    try {
+                        JSONObject obj = new JSONObject(resp);
+                        int roomId = obj.optInt("roomId", -1);
+                        if (roomId > 0) {
+                            openRoom(roomId, friendName);
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "openPrivateChat parse error", e);
+                    }
+                },
+                err -> Log.e(TAG, "openPrivateChat error: " + err)) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> p = new HashMap<>();
+                p.put("myId", String.valueOf(sm.getMaTaiKhoan()));
+                return p;
+            }
+        };
+
+        Volley.newRequestQueue(requireContext()).add(req);
+    }
+
+    private void searchRooms(String keyword, int myId) {
+        String url = Constants.BASE_URL + "chat/search?myId=" + myId + "&keyword=" + keyword;
+
+        JsonObjectRequest req = new JsonObjectRequest(Request.Method.GET, url, null,
+                res -> {
+                    try {
+                        if (!res.optString("status").equals("success")) return;
+                        JSONArray arr = res.optJSONArray("results");
+                        if (arr == null) return;
+
+                        searchResults.clear();
+                        for (int i = 0; i < arr.length(); i++) {
+                            searchResults.add(arr.getJSONObject(i));
+                        }
+
+                        // Dùng FriendAdapter để hiển thị avatar + tên cho cả bạn và phòng
+                        listViewPhongchat.setAdapter(new com.example.chatrealtime.adapter.FriendAdapter(requireContext(), searchResults));
+                    } catch (Exception e) {
+                        Log.e(TAG, "searchRooms parse error", e);
+                    }
+                },
+                err -> Log.e(TAG, "searchRooms error: " + err)
+        );
+
+        Volley.newRequestQueue(requireContext()).add(req);
     }
 
     // Gọi API xóa phòng và cập nhật giao diện + SQLite
@@ -242,7 +338,15 @@ public class MessageFragment extends Fragment {
         if (found) {
             roomAdapter.notifyDataSetChanged(); // Cập nhật giao diện ngay lập tức
         } else {
-            // Nếu chưa có → tải lại
+            // Nếu chưa có phòng trong danh sách, thêm tạm để hiển thị realtime
+            Room placeholder = new Room(maPhong, "Tin nhắn mới", noiDung, "");
+            if (senderId != myId) {
+                placeholder.setUnreadCount(1);
+            }
+            roomList.add(0, placeholder);
+            roomAdapter.notifyDataSetChanged();
+
+            // Đồng thời gọi API để lấy đầy đủ tên/ảnh và sắp xếp lại
             loadRoomsFromApi();
         }
     }
@@ -268,6 +372,11 @@ public class MessageFragment extends Fragment {
                         Log.d(TAG, "Response: " + response);
                         if (response.getString("status").equals("success")) {
                             JSONArray rooms = response.getJSONArray("rooms");
+                            java.util.Map<Integer, Integer> currentUnread = new java.util.HashMap<>();
+                            for (Room rr : roomList) {
+                                currentUnread.put(rr.getId(), rr.getUnreadCount());
+                            }
+
                             roomList.clear();
                             for (int i = 0; i < rooms.length(); i++) {
                                 JSONObject r = rooms.getJSONObject(i);
@@ -277,10 +386,13 @@ public class MessageFragment extends Fragment {
                                 String name = r.optString("tenPhongChat", "Không rõ");
                                 String lastMsg = r.optString("lastMessage", "(Chưa có tin nhắn)");
                                 int unread = r.optInt("unreadCount", 0);
-                                String avatarUrl = r.optString("anhDaiDien_URL", "default_avatar.png");
+                                String avatarUrlRaw = r.optString("anhDaiDien_URL", "");
+                                String avatarUrl = normalizeAvatarUrl(avatarUrlRaw);
 
                                 Room room = new Room(id, name, lastMsg, avatarUrl);
-                                room.setUnreadCount(unread);
+                                // Giữ lại unread lớn hơn nếu client đã tính cao hơn (tránh tụt về 0)
+                                int existingUnread = currentUnread.getOrDefault(id, 0);
+                                room.setUnreadCount(Math.max(unread, existingUnread));
                                 roomList.add(room);
                             }
                             roomAdapter.notifyDataSetChanged();
@@ -307,6 +419,19 @@ public class MessageFragment extends Fragment {
         };
 
         queue.add(request);
+    }
+
+    // Chuẩn hóa avatar để tránh Glide load "/null"
+    private String normalizeAvatarUrl(String raw) {
+        if (raw == null) return "";
+        String trimmed = raw.trim();
+        if (trimmed.isEmpty() || "null".equalsIgnoreCase(trimmed) || "/null".equalsIgnoreCase(trimmed)) {
+            return "";
+        }
+        if (trimmed.startsWith("/")) {
+            return Constants.IMAGE_BASE_URL + trimmed;
+        }
+        return trimmed;
     }
 
     /**
@@ -350,5 +475,17 @@ public class MessageFragment extends Fragment {
         super.onResume();
         // Khi quay lại màn hình danh sách, load lại API để cập nhật số tin chưa đọc chính xác nhất
         loadRoomsFromApi();
+    }
+
+    private static class SearchItem {
+        final int id;
+        final String name;
+        final String type;
+
+        SearchItem(int id, String name, String type) {
+            this.id = id;
+            this.name = name;
+            this.type = type;
+        }
     }
 }

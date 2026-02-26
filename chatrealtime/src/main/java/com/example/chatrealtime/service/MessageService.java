@@ -8,6 +8,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +27,8 @@ import jakarta.transaction.Transactional;
 
 @Service
 public class MessageService {
+
+        private static final Logger log = LoggerFactory.getLogger(MessageService.class);
 
     @Autowired
     private TinNhanRepository tinNhanRepo;
@@ -44,15 +48,35 @@ public class MessageService {
     @Autowired
     private FcmService fcmService;
 
+        @Autowired
+        private ModerationService moderationService;
+
 
     @Transactional
-    public TinNhan sendMessage(
+    public SendMessageResult sendMessage(
             Integer maPhongChat,
             Integer maTaiKhoanGui,
             String noiDung,
             String loaiTinNhan,
             String duongDanFile
     ) {
+        TaiKhoan sender = taiKhoanRepo.findById(maTaiKhoanGui)
+                .orElseThrow(() -> new IllegalArgumentException("Tài khoản không tồn tại"));
+
+                ensureUnlockAndRefreshDaily(sender);
+
+                if ("banned".equalsIgnoreCase(sender.getTrangThai())) {
+                        return SendMessageResult.banned();
+                }
+
+        ModerationService.ModerationDecision decision = moderationService.evaluate(noiDung, maTaiKhoanGui, maPhongChat);
+
+        if ("block".equalsIgnoreCase(decision.action())) {
+                        applyModerationEffects(sender, "block");
+            moderationService.log(null, maPhongChat, maTaiKhoanGui, decision, noiDung);
+            return SendMessageResult.blocked(decision);
+        }
+
         // 1. Lưu tin nhắn
         TinNhan t = new TinNhan();
         t.setMaPhongChat(maPhongChat);
@@ -61,8 +85,18 @@ public class MessageService {
         t.setLoaiTinNhan(loaiTinNhan);
         t.setDuongDanFile(duongDanFile);
         t.setThoiGianGui(LocalDateTime.now());
+        t.setTrangThaiKiemDuyet(mapModerationState(decision));
+        t.setDiemKiemDuyet(decision.score());
 
         TinNhan saved = tinNhanRepo.save(t);
+
+        if (!"allow".equalsIgnoreCase(decision.action())) {
+            moderationService.log(saved.getMaTinNhan(), maPhongChat, maTaiKhoanGui, decision, noiDung);
+        }
+
+        if ("warn".equalsIgnoreCase(decision.action())) {
+                        applyModerationEffects(sender, "warn");
+        }
 
         // 2. Ghi trạng thái tin nhắn cho tất cả thành viên
         List<Integer> members =
@@ -82,7 +116,7 @@ public class MessageService {
         // Gửi push FCM cho các thành viên khác
         notifyMembers(members, maTaiKhoanGui, maPhongChat, noiDung, loaiTinNhan, duongDanFile);
 
-        return saved;
+        return SendMessageResult.delivered(decision, saved);
     }
 
     public List<TinNhan> getMessages(
@@ -204,6 +238,85 @@ public class MessageService {
 
         fcmService.sendMulticast(tokens, title, body, data);
     }
+
+        private void applyModerationEffects(TaiKhoan sender, String action) {
+                java.time.LocalDate today = java.time.LocalDate.now();
+
+                Integer warningToday = sender.getSoLanWarningHomNay() != null ? sender.getSoLanWarningHomNay() : 0;
+                if (sender.getNgayTinhWarning() == null || !today.equals(sender.getNgayTinhWarning())) {
+                        warningToday = 0;
+                        sender.setNgayTinhWarning(today);
+                }
+
+                Integer diem = sender.getDiemCanhCao() != null ? sender.getDiemCanhCao() : 0;
+
+                if ("warn".equalsIgnoreCase(action)) {
+                        warningToday += 1;
+                        diem += 1;
+                } else if ("block".equalsIgnoreCase(action)) {
+                        diem += 3;
+                }
+
+                sender.setSoLanWarningHomNay(warningToday);
+                sender.setDiemCanhCao(diem);
+
+                boolean reachDailyBan = warningToday >= 5;
+                boolean reachScoreBan = diem >= 10;
+
+                if ((reachDailyBan || reachScoreBan)) {
+                        sender.setTrangThai("banned");
+                        sender.setThoiGianKhoa(java.time.LocalDateTime.now());
+                }
+
+                taiKhoanRepo.save(sender);
+                log.info("Moderation effect user={} action={} warnToday={} score={}",
+                        sender.getMaTaiKhoan(), action, warningToday, diem);
+        }
+
+        private void ensureUnlockAndRefreshDaily(TaiKhoan sender) {
+                java.time.LocalDate today = java.time.LocalDate.now();
+
+                // Tự mở khóa sau 3 ngày
+                if ("banned".equalsIgnoreCase(sender.getTrangThai()) && sender.getThoiGianKhoa() != null) {
+                        java.time.Duration lockedFor = java.time.Duration.between(sender.getThoiGianKhoa(), java.time.LocalDateTime.now());
+                        if (lockedFor.toDays() >= 3) {
+                                sender.setTrangThai("online");
+                                sender.setThoiGianKhoa(null);
+                                sender.setSoLanWarningHomNay(0);
+                                sender.setNgayTinhWarning(today);
+                                taiKhoanRepo.save(sender);
+                        }
+                }
+
+                // Reset đếm warning khi sang ngày mới (kể cả không vi phạm)
+                if (sender.getNgayTinhWarning() == null || !today.equals(sender.getNgayTinhWarning())) {
+                        sender.setSoLanWarningHomNay(0);
+                        sender.setNgayTinhWarning(today);
+                        taiKhoanRepo.save(sender);
+                }
+        }
+
+        private String mapModerationState(ModerationService.ModerationDecision decision) {
+                String action = decision.action();
+                if ("block".equalsIgnoreCase(action)) return "blocked";
+                if ("warn".equalsIgnoreCase(action)) return "warning";
+                return "clean";
+        }
+
+        public record SendMessageResult(ModerationService.ModerationDecision decision, TinNhan message, String status) {
+                public static SendMessageResult banned() {
+                        return new SendMessageResult(new ModerationService.ModerationDecision("block", "banned", 1.0, "severe", "Tài khoản đã bị khóa"), null, "BANNED");
+                }
+
+                public static SendMessageResult blocked(ModerationService.ModerationDecision decision) {
+                        return new SendMessageResult(decision, null, "BLOCK");
+                }
+
+                public static SendMessageResult delivered(ModerationService.ModerationDecision decision, TinNhan message) {
+                        String status = "allow".equalsIgnoreCase(decision.action()) ? "CLEAN" : "WARNING";
+                        return new SendMessageResult(decision, message, status);
+                }
+        }
 
 
 }
