@@ -301,8 +301,29 @@ public class FriendsFragment extends Fragment {
                         if (arr == null) return;
 
                         ArrayList<JSONObject> searchList = new ArrayList<>();
+                        java.util.HashSet<String> seen = new java.util.HashSet<>();
                         for (int i = 0; i < arr.length(); i++) {
                             JSONObject item = arr.getJSONObject(i);
+
+                            // Bỏ các phòng 1-1 (loaiPhong=false/0) để không trùng với bản ghi bạn bè
+                            String type = item.optString("type", "friend");
+                            if ("room".equals(type)) {
+                                boolean isGroup;
+                                if (item.has("loaiPhong") && item.get("loaiPhong") instanceof Boolean) {
+                                    isGroup = item.optBoolean("loaiPhong", false);
+                                } else {
+                                    isGroup = item.optInt("loaiPhong", 0) != 0;
+                                }
+                                if (!isGroup) {
+                                    continue; // skip phòng 1-1 trong khung tìm kiếm bạn bè
+                                }
+                            }
+
+                            String key = buildSearchKey(item);
+                            if (seen.contains(key)) {
+                                continue; // bỏ trùng
+                            }
+                            seen.add(key);
                             searchList.add(item);
                         }
 
@@ -317,6 +338,19 @@ public class FriendsFragment extends Fragment {
         Volley.newRequestQueue(requireContext()).add(req);
     }
 
+    private String buildSearchKey(JSONObject item) {
+        String type = item.optString("type", "friend");
+        if ("room".equals(type)) {
+            return type + ":" + item.optInt("id", -1);
+        }
+        // friend result
+        if (item.has("maTaiKhoan")) {
+            return type + ":" + item.optInt("maTaiKhoan", -1);
+        }
+        // fallback tránh null
+        return type + ":" + item.optString("tenNguoiDung", "") + ":" + item.optString("tenPhongChat", "") + ":" + item.optString("id", "");
+    }
+
 
 
     private void loadDanhSachNhom(int maTaiKhoan) {
@@ -325,31 +359,48 @@ public class FriendsFragment extends Fragment {
 
         String url = Constants.BASE_URL + "chat/rooms?maTaiKhoan=" + maTaiKhoan;
 
+        SessionManager session = new SessionManager(requireContext());
+        String token = session.getToken();
+
         JsonObjectRequest request = new JsonObjectRequest(
                 Request.Method.GET,
                 url,
                 null,
                 response -> {
                     try {
+                        Log.d("FriendsFragment", "Rooms response: " + response);
                         if (!"success".equals(response.optString("status"))) return;
                         JSONArray arr = response.optJSONArray("rooms");
+                        Log.d("FriendsFragment", "Total rooms in response: " + (arr != null ? arr.length() : 0));
                         List<Room> groups = new ArrayList<>();
                         if (arr != null) {
                             for (int i = 0; i < arr.length(); i++) {
                                 JSONObject o = arr.getJSONObject(i);
-                                int loaiPhong = o.optInt("loaiPhong", 0);
-                                if (loaiPhong != 1) continue; // chỉ lấy group
+
+                                // Server trả loaiPhong kiểu boolean (true/false) nên phải ép kiểu an toàn
+                                boolean isGroup;
+                                if (o.has("loaiPhong") && o.get("loaiPhong") instanceof Boolean) {
+                                    isGroup = o.optBoolean("loaiPhong", false);
+                                } else {
+                                    int loaiPhongInt = o.optInt("loaiPhong", 0);
+                                    isGroup = loaiPhongInt != 0;
+                                }
+
+                                if (!isGroup) continue; // bỏ phòng 1-1
 
                                 int id = o.optInt("id", -1);
                                 String tenPhong = o.optString("tenPhongChat", "Nhóm");
                                 String lastMsg = o.optString("lastMessage", "");
-                                String avatar = o.optString("anhDaiDien_URL", "");
+                                String avatar = normalizeAvatarUrl(o.optString("anhDaiDien_URL", ""));
 
                                 Room r = new Room(id, tenPhong, lastMsg, avatar);
                                 r.setUnreadCount(o.optInt("unreadCount", 0));
                                 groups.add(r);
+                                Log.d("FriendsFragment", "Add group id=" + id + " isGroup=" + isGroup + " name=" + tenPhong);
                             }
                         }
+
+                        Log.d("FriendsFragment", "Groups after filter: " + groups.size());
 
                         if (groups.isEmpty()) {
                             tvSuggestionHeader.setText("Chưa có nhóm nào, nhấn Tạo nhóm để bắt đầu");
@@ -374,9 +425,28 @@ public class FriendsFragment extends Fragment {
                     }
                 },
                 error -> error.printStackTrace()
-        );
+        ) {
+            @Override
+            public java.util.Map<String, String> getHeaders() {
+                java.util.Map<String, String> h = new java.util.HashMap<>();
+                h.put("Authorization", "Bearer " + token);
+                return h;
+            }
+        };
 
         Volley.newRequestQueue(requireContext()).add(request);
+    }
+
+    private String normalizeAvatarUrl(String raw) {
+        if (raw == null) return "";
+        String trimmed = raw.trim();
+        if (trimmed.isEmpty() || "null".equalsIgnoreCase(trimmed) || "/null".equalsIgnoreCase(trimmed)) {
+            return "";
+        }
+        if (trimmed.startsWith("/")) {
+            return Constants.IMAGE_BASE_URL + trimmed;
+        }
+        return trimmed;
     }
 
 

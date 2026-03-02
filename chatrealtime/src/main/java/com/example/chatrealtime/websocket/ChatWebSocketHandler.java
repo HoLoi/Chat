@@ -9,15 +9,19 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import com.example.chatrealtime.dto.SocketMessage;
+import com.example.chatrealtime.entity.TaiKhoan;
+import com.example.chatrealtime.repository.TaiKhoanRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Component
 public class ChatWebSocketHandler extends TextWebSocketHandler {
     private final WebSocketSessionManager manager;
+    private final TaiKhoanRepository taiKhoanRepo;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public ChatWebSocketHandler(WebSocketSessionManager manager) {
+    public ChatWebSocketHandler(WebSocketSessionManager manager, TaiKhoanRepository taiKhoanRepo) {
         this.manager = manager;
+        this.taiKhoanRepo = taiKhoanRepo;
     }
 
     @Override
@@ -41,10 +45,27 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             // ==== chat_message ====
             case "chat_message":
                 // Phát cho tất cả user đang kết nối (client tự lọc theo maPhongChat)
+                // Lấy thông tin người gửi để gửi kèm avatar / tên
+                String tenNguoiGui = null;
+                String anhDaiDienNguoiGui = null;
+                TaiKhoan tk = taiKhoanRepo.findById(data.maTaiKhoanGui).orElse(null);
+                if (tk != null) {
+                    if (tk.getNguoiDung() != null) {
+                        tenNguoiGui = tk.getNguoiDung().getTenNguoiDung();
+                        anhDaiDienNguoiGui = tk.getNguoiDung().getAnhDaiDien();
+                    }
+                    if ((tenNguoiGui == null || tenNguoiGui.isBlank()) && tk.getEmail() != null) {
+                        tenNguoiGui = tk.getEmail();
+                    }
+                }
+
+                final String finalTen = tenNguoiGui;
+                final String finalAvatar = anhDaiDienNguoiGui;
+
                 manager.users.forEach((uid, s) -> {
                     if (s != null && s.isOpen()) {
                         try {
-                            sendChat(s, data);
+                            sendChat(s, data, finalTen, finalAvatar);
                         } catch (Exception ignored) {
                             // swallow để không làm gián đoạn vòng lặp broadcast
                         }
@@ -76,7 +97,9 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     }
 
 
-    private void sendChat(WebSocketSession session, SocketMessage data) throws Exception {
+    private void sendChat(WebSocketSession session, SocketMessage data, String tenNguoiGui, String anhDaiDienNguoiGui) throws Exception {
+        final String senderName = tenNguoiGui;
+        final String senderAvatar = anhDaiDienNguoiGui;
         session.sendMessage(new TextMessage(
                 mapper.writeValueAsString(
                         new Object() {
@@ -87,6 +110,8 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
                             public final String loaiTinNhan = data.loaiTinNhan;
                             public final String duongDanFile = data.duongDanFile;
                             public final String thoiGianGui = LocalDateTime.now().toString();
+                            public final String tenNguoiGui = senderName;
+                            public final String anhDaiDienNguoiGui = senderAvatar;
                         }
                 )
         ));

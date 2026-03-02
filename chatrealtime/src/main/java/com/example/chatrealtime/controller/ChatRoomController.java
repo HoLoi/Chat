@@ -123,7 +123,11 @@ public class ChatRoomController {
                     .body(Map.of("status", "error", "message", "Không tìm thấy phòng"));
         }
 
-        boolean isMember = thanhVienPhongRepo.existsByIdMaPhongChatAndIdMaTaiKhoanAndNgayXoaIsNull(maPhongChat, maTaiKhoan);
+        // Bỏ ràng buộc ngayXoa cho phòng 1-1 để vẫn lấy avatar người đối diện
+        boolean isOneToOne = room.getLoaiPhong() != null && room.getLoaiPhong() == 0;
+        boolean isMember = isOneToOne
+                ? thanhVienPhongRepo.existsByIdMaPhongChatAndIdMaTaiKhoan(maPhongChat, maTaiKhoan)
+                : thanhVienPhongRepo.existsByIdMaPhongChatAndIdMaTaiKhoanAndNgayXoaIsNull(maPhongChat, maTaiKhoan);
         if (!isMember) {
             return ResponseEntity.status(403)
                     .body(Map.of("status", "error", "message", "Bạn không ở trong phòng"));
@@ -141,7 +145,9 @@ public class ChatRoomController {
         Map<String, Object> res = new java.util.HashMap<>();
         res.put("status", "success");
         res.put("room", roomMap);
-        res.put("members", thanhVienPhongRepo.getMembers(maPhongChat));
+        res.put("members", isOneToOne
+                ? thanhVienPhongRepo.getMembersIncludeDeleted(maPhongChat)
+                : thanhVienPhongRepo.getMembers(maPhongChat));
 
         return ResponseEntity.ok(res);
     }
@@ -192,14 +198,14 @@ public class ChatRoomController {
                     .body(Map.of("status", "error", "message", "Bạn không có quyền chỉnh sửa"));
         }
 
-        if (tenPhong != null && !tenPhong.isBlank()) {
-            room.setTenPhongChat(tenPhong.trim());
-        }
-        if (kieuNhom != null) {
-            room.setKieuNhom(kieuNhom);
-        }
+                if (tenPhong != null && !tenPhong.isBlank()) {
+                        room.setTenPhongChat(tenPhong.trim());
+                }
+                if (kieuNhom != null) {
+                        room.setKieuNhom(kieuNhom);
+                }
                 if (anhDaiDien != null && !anhDaiDien.isBlank()) {
-                        room.setAnhDaiDienUrl(anhDaiDien.trim());
+                        room.setAnhDaiDienUrl(normalizeAvatarPath(anhDaiDien));
                 }
         phongChatRepo.save(room);
         Map<String, Object> roomMap = new java.util.HashMap<>();
@@ -252,7 +258,7 @@ public class ChatRoomController {
                 .body(Map.of("status", "error", "message", "Không thể xóa thành viên"));
     }
 
-        // ================== THÊM THÀNH VIÊN (trưởng nhóm) ==================
+        // ================== THÊM THÀNH VIÊN (thành viên thường + trưởng nhóm) ==================
         @PostMapping("/add-member")
         @Transactional
         public ResponseEntity<?> addMember(
@@ -260,57 +266,49 @@ public class ChatRoomController {
                         @RequestParam Integer maTaiKhoan,
                         @RequestParam Integer memberId
         ) {
-                    try {
-                            if (!taiKhoanRepo.existsById(memberId)) {
-                                    return ResponseEntity.ok()
-                                                    .body(Map.of("status", "error", "message", "Tài khoản cần thêm không tồn tại"));
-                            }
+                try {
+                        if (!taiKhoanRepo.existsById(memberId)) {
+                                return ResponseEntity.ok(Map.of("status", "error", "message", "Tài khoản cần thêm không tồn tại"));
+                        }
 
-                            PhongChat room = phongChatRepo.findById(maPhongChat)
-                                            .orElse(null);
-                            if (room == null) {
-                                    return ResponseEntity.ok()
-                                                    .body(Map.of("status", "error", "message", "Không tìm thấy phòng"));
-                            }
+                        PhongChat room = phongChatRepo.findById(maPhongChat).orElse(null);
+                        if (room == null) {
+                                return ResponseEntity.ok(Map.of("status", "error", "message", "Không tìm thấy phòng"));
+                        }
 
-                            Integer leader = room.getMaTruongNhom() != null ? room.getMaTruongNhom() : room.getMaTaiKhoanTao();
-                            if (!Objects.equals(leader, maTaiKhoan)) {
-                                    return ResponseEntity.ok()
-                                                    .body(Map.of("status", "error", "message", "Bạn không có quyền thêm thành viên"));
-                            }
+                        Integer leader = room.getMaTruongNhom() != null ? room.getMaTruongNhom() : room.getMaTaiKhoanTao();
+                        boolean isLeader = Objects.equals(leader, maTaiKhoan);
+                        boolean isPrivate = room.getKieuNhom() != null && room.getKieuNhom() == 1;
 
-                            ThanhVienPhongId id = new ThanhVienPhongId(maPhongChat, memberId);
-                            ThanhVienPhong existed = thanhVienPhongRepo.findById(id).orElse(null);
+                        ThanhVienPhongId id = new ThanhVienPhongId(maPhongChat, memberId);
+                        ThanhVienPhong existed = thanhVienPhongRepo.findById(id).orElse(null);
 
-                            // Nếu đã là thành viên và chưa bị xóa
-                            if (existed != null && existed.getNgayXoa() == null && "approved".equalsIgnoreCase(existed.getTrangThaiThamGia())) {
-                                    return ResponseEntity.ok(Map.of("status", "success", "message", "Đã là thành viên"));
-                            }
+                        // Nếu đã là thành viên và chưa bị xóa
+                        if (existed != null && existed.getNgayXoa() == null && "approved".equalsIgnoreCase(existed.getTrangThaiThamGia())) {
+                                return ResponseEntity.ok(Map.of("status", "success", "message", "Đã là thành viên"));
+                        }
 
-                            boolean isLeader = Objects.equals(leader, maTaiKhoan);
-                            boolean isPrivate = room.getKieuNhom() != null && room.getKieuNhom() == 1;
+                        // Phòng private + người thêm không phải trưởng nhóm -> tạo pending
+                        if (isPrivate && !isLeader) {
+                                ThanhVienPhong pending = existed != null ? existed : new ThanhVienPhong(maPhongChat, memberId, "member");
+                                pending.setTrangThaiThamGia("pending");
+                                pending.setNguoiDuyet(null);
+                                pending.setNgayXoa(null);
+                                thanhVienPhongRepo.save(pending);
+                                return ResponseEntity.ok(Map.of("status", "pending", "message", "Đã gửi yêu cầu, chờ trưởng nhóm duyệt"));
+                        }
 
-                            // Nếu phòng private và người thêm không phải trưởng nhóm -> tạo yêu cầu pending
-                            if (isPrivate && !isLeader) {
-                                    ThanhVienPhong pending = existed != null ? existed : new ThanhVienPhong(maPhongChat, memberId, "member");
-                                    pending.setTrangThaiThamGia("pending");
-                                    pending.setNguoiDuyet(null);
-                                    pending.setNgayXoa(null);
-                                    thanhVienPhongRepo.save(pending);
-                                    return ResponseEntity.ok(Map.of("status", "pending", "message", "Đã gửi yêu cầu, chờ trưởng nhóm duyệt"));
-                            }
-
-                            // Trưởng nhóm hoặc phòng public: thêm ngay
+                            // Public hoặc trưởng nhóm: thêm ngay
                             ThanhVienPhong tv = existed != null ? existed : new ThanhVienPhong(maPhongChat, memberId, "member");
                             tv.setTrangThaiThamGia("approved");
-                            tv.setNguoiDuyet(maTaiKhoan);
-                            tv.setNgayXoa(null);
-                            thanhVienPhongRepo.save(tv);
-                            return ResponseEntity.ok(Map.of("status", "success", "message", "Thêm thành viên thành công"));
-                    } catch (Exception e) {
-                            log.error("[add-member] Lỗi thêm thành viên", e);
-                            return ResponseEntity.ok(Map.of("status", "error", "message", "Thêm thành viên thất bại"));
-                    }
+                            tv.setNguoiDuyet(maTaiKhoan); // người thực hiện thao tác
+                        tv.setNgayXoa(null);
+                        thanhVienPhongRepo.save(tv);
+                        return ResponseEntity.ok(Map.of("status", "success", "message", "Thêm thành viên thành công"));
+                } catch (Exception e) {
+                        log.error("[add-member] Lỗi thêm thành viên", e);
+                        return ResponseEntity.ok(Map.of("status", "error", "message", "Thêm thành viên thất bại"));
+                }
         }
 
     // ================== TẠO PHÒNG CHAT ==================
@@ -321,7 +319,7 @@ public class ChatRoomController {
                         @RequestParam String members,
                         @RequestParam Integer currentUserId,
                         @RequestParam(required = false, defaultValue = "0") Integer kieuNhom,
-                        @RequestParam(required = false) String anhDaiDien
+                            @RequestParam(required = false) String anhDaiDien
         ) {
                 log.info("[create-room] currentUserId={} rawMembers={} kieuNhom={} tenPhong={} avatar={}", currentUserId, members, kieuNhom, tenPhong, anhDaiDien);
                 List<Integer> rawMembers = parseMembers(members);
@@ -359,11 +357,13 @@ public class ChatRoomController {
         // Tạo phòng mới
         PhongChat p = new PhongChat();
         p.setLoaiPhong((memberList.size() > 1 ? 1 : 0));
-        p.setTenPhongChat(tenPhong != null ? tenPhong : "Chat");
+                p.setTenPhongChat(tenPhong != null ? tenPhong : "Chat");
         p.setMaTaiKhoanTao(currentUserId);
         p.setKieuNhom(kieuNhom);
         p.setMaTruongNhom(currentUserId);
-        p.setAnhDaiDienUrl(anhDaiDien);
+                if (anhDaiDien != null && !anhDaiDien.isBlank()) {
+                        p.setAnhDaiDienUrl(normalizeAvatarPath(anhDaiDien));
+                }
         phongChatRepo.save(p);
 
         // Người tạo = admin
@@ -399,6 +399,19 @@ public class ChatRoomController {
                         } catch (NumberFormatException ignored) {}
                 }
                 return list;
+        }
+
+        private String normalizeAvatarPath(String raw) {
+                if (raw == null) return null;
+                String trimmed = raw.trim();
+                if (trimmed.isEmpty() || "null".equalsIgnoreCase(trimmed)) return null;
+                // Nếu là URL đầy đủ thì giữ nguyên
+                if (trimmed.startsWith("http")) return trimmed;
+                // Đảm bảo luôn có dấu /
+                if (!trimmed.startsWith("/")) {
+                        trimmed = "/" + trimmed;
+                }
+                return trimmed;
         }
 
     // ================== LẤY DANH SÁCH THÀNH VIÊN ==================

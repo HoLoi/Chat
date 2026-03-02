@@ -83,7 +83,8 @@ public class MessageController {
                         @RequestParam Integer maPhongChat,
                         @RequestParam Integer maTaiKhoanGui,
                         @RequestParam("file") MultipartFile file,
-                        @RequestParam(required = false, defaultValue = "") String loaiTinNhan
+                        @RequestParam(required = false, defaultValue = "") String loaiTinNhan,
+                        @RequestParam(required = false, defaultValue = "false") boolean skipMessage
         ) {
                 if (file == null || file.isEmpty()) {
                         return ResponseEntity.badRequest()
@@ -113,6 +114,18 @@ public class MessageController {
                         }
 
                         String fileUrl = "/uploads/chat/" + savedName;
+
+                        // Nếu chỉ upload để đặt avatar nhóm thì bỏ qua bước gửi tin nhắn
+                        if (skipMessage) {
+                                return ResponseEntity.ok(
+                                                Map.of(
+                                                                "status", "success",
+                                                                "loaiTinNhan", detectedType,
+                                                                "duongDanFile", fileUrl,
+                                                                "mimeType", mime
+                                                )
+                                );
+                        }
 
                         // Lưu tin nhắn dạng file
                         SendMessageResult result = messageService.sendMessage(

@@ -125,6 +125,14 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
         notifyItemRangeInserted(start, msgs.size());
     }
 
+    public void setMessages(List<Message> msgs) {
+        messageList.clear();
+        if (msgs != null) {
+            messageList.addAll(msgs);
+        }
+        notifyDataSetChanged();
+    }
+
     public static class MessageViewHolder extends RecyclerView.ViewHolder {
         TextView txtMessage;
         ImageView imgMedia;

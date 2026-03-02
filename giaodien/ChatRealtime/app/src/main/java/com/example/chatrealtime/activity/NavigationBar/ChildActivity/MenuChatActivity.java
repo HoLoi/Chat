@@ -41,6 +41,8 @@ import org.json.JSONObject;
 
 public class MenuChatActivity extends AppCompatActivity {
 
+    private static final String TAG = "MenuChatActivity";
+
     LinearLayout layoutTrangCaNhan;
     TextView tvTenPhong;
     ImageView imgBack;
@@ -59,6 +61,9 @@ public class MenuChatActivity extends AppCompatActivity {
     private int maPhong;
     private int myId;
     private java.util.List<Member> cachedMembers = new java.util.ArrayList<>();
+    private AlertDialog memberDialogRef;
+    private MemberDialogAdapter memberDialogAdapter;
+    private MemberListAdapter memberListAdapter;
     private ChatDatabaseHelper dbHelper;
 
     @Override
@@ -126,6 +131,7 @@ public class MenuChatActivity extends AppCompatActivity {
         btnAddMembers.setOnClickListener(v -> showAddMemberDialog());
         btnTogglePrivacy.setOnClickListener(v -> togglePrivacy());
         btnPendingRequests.setOnClickListener(v -> openPendingDialog());
+        tvDeleteLeave.setOnClickListener(v -> confirmLeaveOrDissolve());
 
         lvMembers.setVisibility(View.GONE); // không hiển thị list trong menu chính
 
@@ -139,6 +145,7 @@ public class MenuChatActivity extends AppCompatActivity {
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
                 response -> {
                     try {
+                        android.util.Log.d(TAG, "loadRoomInfo status=" + response.optString("status") + " room=" + maPhong);
                         if (!response.getString("status").equals("success")) return;
 
                         cachedMembers.clear();
@@ -156,7 +163,8 @@ public class MenuChatActivity extends AppCompatActivity {
                         isLeader = (leaderId == myId);
                         applyMode();
 
-                        String avatarGroup = normalizeAvatarUrl(room.optString("anhDaiDienUrl", ""));
+                        // Ưu tiên camelCase trả từ API, fallback snake_case để tránh miss-key
+                        String avatarGroup = normalizeAvatarUrl(room.optString("anhDaiDienUrl", room.optString("anhDaiDien_URL", "")));
                         if (isGroup) {
                             Glide.with(this)
                                     .load(avatarGroup.isEmpty() ? null : avatarGroup)
@@ -167,10 +175,14 @@ public class MenuChatActivity extends AppCompatActivity {
 
                         setMembersFromResponse(arr, avatarGroup);
 
+                        updateOneToOneHeader();
+
                         bindMemberList();
-                    } catch (Exception e) { }
+                    } catch (Exception e) {
+                        android.util.Log.e(TAG, "loadRoomInfo parse error", e);
+                    }
                 },
-                error -> {}
+                error -> android.util.Log.e(TAG, "loadRoomInfo error", error)
         );
 
         queue.add(request);
@@ -181,11 +193,19 @@ public class MenuChatActivity extends AppCompatActivity {
             layoutTrangCaNhan.setVisibility(View.GONE);
             tvMemberHeader.setVisibility(View.VISIBLE);
             lvMembers.setVisibility(View.GONE);
-            tvDeleteLeave.setText("Rời nhóm");
-            layoutGroupActions.setVisibility(isLeader ? View.VISIBLE : View.GONE);
-            tvGroupNote.setVisibility(isLeader ? View.VISIBLE : View.GONE);
-            btnTogglePrivacy.setText(kieuNhom == 1 ? "Chuyển sang Public" : "Chuyển sang Private");
+            tvDeleteLeave.setText(isLeader ? "Giải tán nhóm" : "Rời nhóm");
+            layoutGroupActions.setVisibility(View.VISIBLE);
+            // Hiển thị chung: xem thành viên, thêm thành viên
+            btnViewMembers.setVisibility(View.VISIBLE);
+            btnAddMembers.setVisibility(View.VISIBLE);
+            // Chỉ trưởng nhóm mới thấy các thao tác quản trị
+            int leaderVis = isLeader ? View.VISIBLE : View.GONE;
+            btnRenameGroup.setVisibility(leaderVis);
+            btnChangeAvatar.setVisibility(leaderVis);
+            btnTogglePrivacy.setVisibility(leaderVis);
             btnPendingRequests.setVisibility(isLeader && kieuNhom == 1 ? View.VISIBLE : View.GONE);
+            tvGroupNote.setVisibility(leaderVis);
+            btnTogglePrivacy.setText(kieuNhom == 1 ? "Chuyển sang Public" : "Chuyển sang Private");
         } else {
             layoutTrangCaNhan.setVisibility(View.VISIBLE);
             tvMemberHeader.setVisibility(View.GONE);
@@ -195,23 +215,108 @@ public class MenuChatActivity extends AppCompatActivity {
         }
     }
 
+    private void confirmLeaveOrDissolve() {
+        if (!isGroup) {
+            confirmDeleteRoom();
+            return;
+        }
+        if (isLeader) {
+            new AlertDialog.Builder(this)
+                    .setTitle("Giải tán nhóm")
+                    .setMessage("Giải tán nhóm sẽ xóa toàn bộ phòng chat. Tiếp tục?")
+                    .setPositiveButton("Giải tán", (d, w) -> dissolveGroup())
+                    .setNegativeButton("Hủy", null)
+                    .show();
+        } else {
+            new AlertDialog.Builder(this)
+                    .setTitle("Rời nhóm")
+                    .setMessage("Bạn chắc chắn muốn rời nhóm?")
+                    .setPositiveButton("Rời nhóm", (d, w) -> leaveGroup())
+                    .setNegativeButton("Hủy", null)
+                    .show();
+        }
+    }
+
+    private void leaveGroup() {
+        String url = Constants.BASE_URL + "chat/remove-member";
+        StringRequest req = new StringRequest(Request.Method.POST, url,
+                resp -> {
+                    Toast.makeText(this, "Đã rời nhóm", Toast.LENGTH_SHORT).show();
+                    finish();
+                },
+                err -> Toast.makeText(this, "Lỗi rời nhóm", Toast.LENGTH_SHORT).show()
+        ) {
+            @Override
+            protected java.util.Map<String, String> getParams() {
+                java.util.Map<String, String> p = new java.util.HashMap<>();
+                p.put("maPhongChat", String.valueOf(maPhong));
+                p.put("maTaiKhoan", String.valueOf(myId));
+                p.put("memberId", String.valueOf(myId));
+                return p;
+            }
+        };
+        Volley.newRequestQueue(this).add(req);
+    }
+
+    private void dissolveGroup() {
+        String url = Constants.BASE_URL + "chat/delete-room";
+        StringRequest req = new StringRequest(Request.Method.POST, url,
+                resp -> {
+                    Toast.makeText(this, "Đã giải tán nhóm", Toast.LENGTH_SHORT).show();
+                    finish();
+                },
+                err -> Toast.makeText(this, "Lỗi giải tán nhóm", Toast.LENGTH_SHORT).show()
+        ) {
+            @Override
+            protected java.util.Map<String, String> getParams() {
+                java.util.Map<String, String> p = new java.util.HashMap<>();
+                p.put("maPhongChat", String.valueOf(maPhong));
+                p.put("maTaiKhoan", String.valueOf(myId));
+                return p;
+            }
+        };
+        Volley.newRequestQueue(this).add(req);
+    }
+
+    private void confirmDeleteRoom() {
+        new AlertDialog.Builder(this)
+                .setTitle("Xóa cuộc trò chuyện")
+                .setMessage("Bạn có chắc muốn xóa cuộc trò chuyện này?")
+                .setPositiveButton("Xóa", (d, w) -> dissolveGroup())
+                .setNegativeButton("Hủy", null)
+                .show();
+    }
+
     private void setMembersFromResponse(JSONArray arr, String avatarGroup) throws Exception {
+        boolean friendAvatarSet = false;
         for (int i = 0; i < arr.length(); i++) {
             JSONObject obj = arr.getJSONObject(i);
             int id = obj.getInt("maTaiKhoan");
             String name = obj.optString("tenNguoiDung", "");
             String role = obj.optString("vaiTro", "member");
-            String avatar = obj.optString("anhDaiDien", "");
+            // server có thể trả anhDaiDien hoặc anhDaiDien_URL
+            String avatar = obj.optString("anhDaiDien", obj.optString("anhDaiDien_URL", ""));
             cachedMembers.add(new Member(id, name, role, avatar));
 
-            if (!isGroup && id != myId && (avatarGroup == null || avatarGroup.isEmpty())) {
+            // Phòng 1-1: luôn lấy avatar của người đối diện ngay khi load danh sách
+            if (!isGroup && id != myId && !friendAvatarSet) {
                 String friendAvatar = normalizeAvatarUrl(avatar);
                 Glide.with(this)
                         .load(friendAvatar.isEmpty() ? null : friendAvatar)
                         .placeholder(R.drawable.avatar_default)
                         .error(R.drawable.avatar_default)
                         .into(imgAvatarRoom);
+                friendAvatarSet = true;
             }
+        }
+
+        if (isGroup) {
+            String groupAvatar = normalizeAvatarUrl(avatarGroup);
+            Glide.with(this)
+                    .load(groupAvatar.isEmpty() ? null : groupAvatar)
+                    .placeholder(R.drawable.avatar_default)
+                    .error(R.drawable.avatar_default)
+                    .into(imgAvatarRoom);
         }
 
         // Lấy friendId cho chat 1-1
@@ -310,6 +415,8 @@ public class MenuChatActivity extends AppCompatActivity {
                     p.put("maPhongChat", String.valueOf(maPhong));
                     p.put("maTaiKhoanGui", String.valueOf(myId));
                     p.put("loaiTinNhan", "image");
+                    // Chỉ upload file, không tạo tin nhắn trong phòng
+                    p.put("skipMessage", "true");
                     return p;
                 }
 
@@ -360,16 +467,17 @@ public class MenuChatActivity extends AppCompatActivity {
             Toast.makeText(this, "Chưa tải danh sách thành viên", Toast.LENGTH_SHORT).show();
             return;
         }
-        MemberDialogAdapter adapter = new MemberDialogAdapter(this, cachedMembers);
+        memberDialogAdapter = new MemberDialogAdapter(this, cachedMembers);
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("Thành viên")
-                .setAdapter(adapter, (d, which) -> {
+            .setAdapter(memberDialogAdapter, (d, which) -> {
                     Member m = cachedMembers.get(which);
                     Intent intent = new Intent(MenuChatActivity.this, PersionalPageActivity.class);
                     intent.putExtra("friendId", m.id);
                     startActivity(intent);
                 })
                 .create();
+        memberDialogRef = dialog;
         dialog.show();
 
         if (isLeader) {
@@ -423,25 +531,53 @@ public class MenuChatActivity extends AppCompatActivity {
             return;
         }
 
-        String[] names = new String[available.size()];
-        int[] ids = new int[available.size()];
-        for (int i = 0; i < available.size(); i++) {
-            org.json.JSONObject f = available.get(i);
-            ids[i] = f.optInt("maTaiKhoan", f.optInt("maNguoiDung"));
-            names[i] = f.optString("hoTen", "Bạn bè") + " (" + ids[i] + ")";
-        }
+        android.widget.ArrayAdapter<org.json.JSONObject> adapter = new android.widget.ArrayAdapter<>(this, R.layout.item_member_dialog, available) {
+            @Override
+            public View getView(int position, View convertView, android.view.ViewGroup parent) {
+                View v = convertView;
+                if (v == null) {
+                    v = getLayoutInflater().inflate(R.layout.item_member_dialog, parent, false);
+                }
+                org.json.JSONObject f = getItem(position);
+                ImageView iv = v.findViewById(R.id.ivAvatar);
+                TextView tv = v.findViewById(R.id.tvName);
+                int id = f.optInt("maTaiKhoan", f.optInt("maNguoiDung"));
+                String name = f.optString("hoTen", "Bạn bè") + " (" + id + ")";
+                tv.setText(name);
+
+                String rawAvatar = f.optString("anhDaiDien", f.optString("anhDaiDien_URL", ""));
+                String full = normalizeAvatarUrl(rawAvatar);
+                if (full.isEmpty()) {
+                    iv.setImageResource(R.drawable.avatar_default);
+                } else {
+                    Glide.with(MenuChatActivity.this)
+                            .load(full)
+                            .placeholder(R.drawable.avatar_default)
+                            .error(R.drawable.avatar_default)
+                            .into(iv);
+                }
+                return v;
+            }
+        };
 
         new AlertDialog.Builder(this)
                 .setTitle("Chọn bạn để thêm")
-                .setItems(names, (d, idx) -> addMember(ids[idx]))
+                .setAdapter(adapter, (d, idx) -> {
+                    org.json.JSONObject chosen = available.get(idx);
+                    int chosenId = chosen.optInt("maTaiKhoan", chosen.optInt("maNguoiDung"));
+                    android.util.Log.d("MenuChatActivity", "Add member click id=" + chosenId);
+                    addMember(chosenId);
+                })
                 .setNegativeButton("Hủy", null)
                 .show();
     }
 
     private void addMember(int memberId) {
+        android.util.Log.d("MenuChatActivity", "Calling addMember memberId=" + memberId + " room=" + maPhong + " myId=" + myId);
         String url = Constants.BASE_URL + "chat/add-member";
         StringRequest req = new StringRequest(Request.Method.POST, url,
                 resp -> {
+                    android.util.Log.d("MenuChatActivity", "addMember resp=" + resp);
                     try {
                         JSONObject obj = new JSONObject(resp);
                         String status = obj.optString("status", "success");
@@ -456,9 +592,10 @@ public class MenuChatActivity extends AppCompatActivity {
                     }
                 },
                 err -> {
+                    android.util.Log.e("MenuChatActivity", "addMember error", err);
                     try {
                         if (err.networkResponse != null && err.networkResponse.data != null) {
-                            String body = new String(err.networkResponse.data);
+                            String body = new String(err.networkResponse.data, java.nio.charset.StandardCharsets.UTF_8);
                             JSONObject obj = new JSONObject(body.trim());
                             String msg = obj.optString("message", "Lỗi thêm thành viên");
                             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
@@ -478,11 +615,22 @@ public class MenuChatActivity extends AppCompatActivity {
                     p.put("memberId", String.valueOf(memberId));
                 return p;
             }
+
+            @Override
+            protected com.android.volley.Response<String> parseNetworkResponse(com.android.volley.NetworkResponse response) {
+                try {
+                    String utf8 = new String(response.data, java.nio.charset.StandardCharsets.UTF_8);
+                    return com.android.volley.Response.success(utf8, com.android.volley.toolbox.HttpHeaderParser.parseCacheHeaders(response));
+                } catch (Exception e) {
+                    return com.android.volley.Response.error(new com.android.volley.ParseError(e));
+                }
+            }
         };
         Volley.newRequestQueue(this).add(req);
     }
 
     private void openPersonalPage() {
+        android.util.Log.d(TAG, "openPersonalPage friendId=" + friendId + " room=" + maPhong);
         if (friendId != -1) {
             Intent intent = new Intent(MenuChatActivity.this, PersionalPageActivity.class);
             intent.putExtra("friendId", friendId);
@@ -506,6 +654,7 @@ public class MenuChatActivity extends AppCompatActivity {
                             int id = o.optInt("maTaiKhoan", -1);
                             if (id != -1 && id != myId) {
                                 friendId = id;
+                                android.util.Log.d(TAG, "openPersonalPage resolved friendId=" + friendId);
                                 Intent intent = new Intent(MenuChatActivity.this, PersionalPageActivity.class);
                                 intent.putExtra("friendId", friendId);
                                 startActivity(intent);
@@ -526,12 +675,16 @@ public class MenuChatActivity extends AppCompatActivity {
         JsonObjectRequest req = new JsonObjectRequest(Request.Method.GET, url, null,
                 res -> {
                     try {
-                        if (!"success".equals(res.optString("status"))) return;
+                        if (!"success".equals(res.optString("status"))) {
+                            Toast.makeText(this, res.optString("message", "Không có quyền xem yêu cầu"), Toast.LENGTH_SHORT).show();
+                            return;
+                        }
                         JSONArray arr = res.optJSONArray("requests");
                         java.util.List<JSONObject> list = new java.util.ArrayList<>();
                         if (arr != null) {
                             for (int i = 0; i < arr.length(); i++) list.add(arr.getJSONObject(i));
                         }
+                        android.util.Log.d(TAG, "pending size=" + list.size() + " room=" + maPhong);
                         showPendingList(list);
                     } catch (Exception ignored) {}
                 },
@@ -545,18 +698,38 @@ public class MenuChatActivity extends AppCompatActivity {
             Toast.makeText(this, "Không có yêu cầu chờ", Toast.LENGTH_SHORT).show();
             return;
         }
-        String[] names = new String[list.size()];
-        for (int i = 0; i < list.size(); i++) {
-            JSONObject o = list.get(i);
-            String displayName = o.optString("tenNguoiDung", "");
-            names[i] = (displayName.isEmpty() ? o.optString("maTaiKhoan", "") : displayName) + " - " + o.optString("trangThai", "pending");
-        }
+        android.widget.ArrayAdapter<JSONObject> adapter = new android.widget.ArrayAdapter<>(this, R.layout.item_member_dialog, list) {
+            @Override
+            public View getView(int position, View convertView, android.view.ViewGroup parent) {
+                View v = convertView;
+                if (v == null) {
+                    v = getLayoutInflater().inflate(R.layout.item_member_dialog, parent, false);
+                }
+                JSONObject o = getItem(position);
+                ImageView iv = v.findViewById(R.id.ivAvatar);
+                TextView tv = v.findViewById(R.id.tvName);
+
+                String displayName = o.optString("tenNguoiDung", "");
+                String name = displayName.isEmpty() ? o.optString("maTaiKhoan", "") : displayName;
+                String status = o.optString("trangThai", "pending");
+                tv.setText(name + " - " + status);
+
+                String avatarRaw = o.optString("anhDaiDien", "");
+                String avatarFull = normalizeAvatarUrl(avatarRaw);
+                Glide.with(MenuChatActivity.this)
+                        .load(avatarFull.isEmpty() ? null : avatarFull)
+                        .placeholder(R.drawable.avatar_default)
+                        .error(R.drawable.avatar_default)
+                        .into(iv);
+                return v;
+            }
+        };
 
         new AlertDialog.Builder(this)
                 .setTitle("Yêu cầu tham gia")
-                .setItems(names, (dialog, which) -> {
+                .setAdapter(adapter, (dialog, which) -> {
                     JSONObject chosen = list.get(which);
-                    int requestId = chosen.optInt("id", -1);
+                    int requestId = chosen.optInt("id", chosen.optInt("maTaiKhoan", -1));
                     if (requestId != -1) showApproveDialog(requestId);
                 })
                 .setNegativeButton("Đóng", null)
@@ -609,6 +782,15 @@ public class MenuChatActivity extends AppCompatActivity {
         StringRequest req = new StringRequest(Request.Method.POST, url,
                 resp -> {
                     Toast.makeText(this, "Đã xóa thành viên", Toast.LENGTH_SHORT).show();
+                    // Cập nhật ngay danh sách đang hiển thị
+                    for (int i = 0; i < cachedMembers.size(); i++) {
+                        if (cachedMembers.get(i).id == memberId) {
+                            cachedMembers.remove(i);
+                            break;
+                        }
+                    }
+                    if (memberDialogAdapter != null) memberDialogAdapter.notifyDataSetChanged();
+                    if (memberListAdapter != null) memberListAdapter.notifyDataSetChanged();
                     loadRoomInfo();
                 },
                 err -> Toast.makeText(this, "Lỗi xóa thành viên", Toast.LENGTH_SHORT).show()
@@ -675,8 +857,8 @@ public class MenuChatActivity extends AppCompatActivity {
             lvMembers.setAdapter(null);
             return;
         }
-        MemberListAdapter adapter = new MemberListAdapter();
-        lvMembers.setAdapter(adapter);
+        memberListAdapter = new MemberListAdapter();
+        lvMembers.setAdapter(memberListAdapter);
         lvMembers.setOnItemLongClickListener((parent, view, position, id) -> {
             if (!isLeader) return true;
             Member m = cachedMembers.get(position);
@@ -728,9 +910,30 @@ public class MenuChatActivity extends AppCompatActivity {
         if (trimmed.isEmpty() || "null".equalsIgnoreCase(trimmed) || "/null".equalsIgnoreCase(trimmed)) {
             return "";
         }
+        if (trimmed.startsWith("http")) {
+            return trimmed;
+        }
         if (trimmed.startsWith("/")) {
             return Constants.IMAGE_BASE_URL + trimmed;
         }
-        return trimmed;
+        // Trường hợp server trả về đường dẫn tương đối (uploads/...) thì tự thêm base
+        return Constants.IMAGE_BASE_URL + "/" + trimmed;
+    }
+
+    private void updateOneToOneHeader() {
+        if (isGroup) return;
+        for (Member m : cachedMembers) {
+            if (m.id != myId) {
+                friendId = m.id;
+                tvTenPhong.setText(m.name);
+                String avatar = normalizeAvatarUrl(m.avatar);
+                Glide.with(this)
+                        .load(avatar.isEmpty() ? null : avatar)
+                        .placeholder(R.drawable.avatar_default)
+                        .error(R.drawable.avatar_default)
+                        .into(imgAvatarRoom);
+                return;
+            }
+        }
     }
 }

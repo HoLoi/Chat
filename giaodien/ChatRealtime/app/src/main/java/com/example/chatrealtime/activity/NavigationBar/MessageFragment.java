@@ -31,6 +31,7 @@ public class MessageFragment extends Fragment {
     private ChatDatabaseHelper dbHelper;
     private EditText etSearch;
     private ArrayList<JSONObject> searchResults = new ArrayList<>();
+    private boolean isVisibleToUser = false; // Chỉ xử lý realtime khi fragment đang hiện
 
     private static final String TAG = "MessageFragment";
 
@@ -104,7 +105,9 @@ public class MessageFragment extends Fragment {
                 // Lấy ID người gửi để biết có nên tăng số tin nhắn chưa đọc hay không
                 int senderId = obj.optInt("maTaiKhoanGui", -1);
 
-                updateRoomWithNewMessage(maPhong, noiDung, senderId);
+                if (isVisibleToUser) {
+                    updateRoomWithNewMessage(maPhong, noiDung, senderId);
+                }
             } catch (Exception e) {
                 Log.e(TAG, "Parse realtime message error: " + e.getMessage());
             }
@@ -131,6 +134,8 @@ public class MessageFragment extends Fragment {
             room.resetUnread();
             roomAdapter.notifyDataSetChanged();
             markAsReadOnServer(room.getId());
+            // Lưu lại trạng thái đã đọc để không bị max() với giá trị cũ
+            dbHelper.saveRooms(roomList);
 
             Intent intent = new Intent(requireContext(), ChatActivity.class);
             intent.putExtra("maPhong", room.getId());
@@ -227,12 +232,31 @@ public class MessageFragment extends Fragment {
                         if (arr == null) return;
 
                         searchResults.clear();
+                        java.util.HashSet<String> seen = new java.util.HashSet<>();
+                        ArrayList<JSONObject> roomOnly = new ArrayList<>();
+
                         for (int i = 0; i < arr.length(); i++) {
-                            searchResults.add(arr.getJSONObject(i));
+                            JSONObject obj = arr.getJSONObject(i);
+                            String type = obj.optString("type", "room");
+
+                            // Chỉ lấy kết quả phòng chat
+                            if (!"room".equals(type)) {
+                                continue;
+                            }
+
+                            // Dedupe theo id phòng
+                            String key = "room:" + obj.optInt("id", -1);
+                            if (seen.contains(key)) {
+                                continue;
+                            }
+                            seen.add(key);
+                            roomOnly.add(obj);
                         }
 
-                        // Dùng FriendAdapter để hiển thị avatar + tên cho cả bạn và phòng
-                        listViewPhongchat.setAdapter(new com.example.chatrealtime.adapter.FriendAdapter(requireContext(), searchResults));
+                        searchResults.addAll(roomOnly);
+
+                        // Dùng FriendAdapter để hiển thị avatar + tên cho phòng
+                        listViewPhongchat.setAdapter(new com.example.chatrealtime.adapter.FriendAdapter(requireContext(), roomOnly));
                     } catch (Exception e) {
                         Log.e(TAG, "searchRooms parse error", e);
                     }
@@ -337,16 +361,18 @@ public class MessageFragment extends Fragment {
 
         if (found) {
             roomAdapter.notifyDataSetChanged(); // Cập nhật giao diện ngay lập tức
+            // Lưu lại để không mất unread khi rời fragment
+            dbHelper.saveRooms(roomList);
         } else {
-            // Nếu chưa có phòng trong danh sách, thêm tạm để hiển thị realtime
-            Room placeholder = new Room(maPhong, "Tin nhắn mới", noiDung, "");
-            if (senderId != myId) {
-                placeholder.setUnreadCount(1);
+            // Không có trong danh sách (có thể đã xóa): tạo tạm để hiển thị unread đầu tiên
+            if (senderId != myId && ChatActivity.CURRENT_OPEN_ROOM != maPhong) {
+                Room temp = new Room(maPhong, "Đoạn chat", noiDung, "");
+                temp.setUnreadCount(1);
+                roomList.add(0, temp);
+                roomAdapter.notifyDataSetChanged();
+                dbHelper.saveRooms(roomList);
             }
-            roomList.add(0, placeholder);
-            roomAdapter.notifyDataSetChanged();
-
-            // Đồng thời gọi API để lấy đầy đủ tên/ảnh và sắp xếp lại
+            // Đồng thời gọi API để đồng bộ tên/ảnh chính xác
             loadRoomsFromApi();
         }
     }
@@ -372,11 +398,11 @@ public class MessageFragment extends Fragment {
                         Log.d(TAG, "Response: " + response);
                         if (response.getString("status").equals("success")) {
                             JSONArray rooms = response.getJSONArray("rooms");
-                            java.util.Map<Integer, Integer> currentUnread = new java.util.HashMap<>();
-                            for (Room rr : roomList) {
-                                currentUnread.put(rr.getId(), rr.getUnreadCount());
+                            // Giữ lại unread cục bộ (đã lưu vào DB) để tránh bị reset do độ trễ server
+                            Map<Integer, Integer> currentUnread = new HashMap<>();
+                            for (Room r : roomList) {
+                                currentUnread.put(r.getId(), r.getUnreadCount());
                             }
-
                             roomList.clear();
                             for (int i = 0; i < rooms.length(); i++) {
                                 JSONObject r = rooms.getJSONObject(i);
@@ -386,16 +412,16 @@ public class MessageFragment extends Fragment {
                                 String name = r.optString("tenPhongChat", "Không rõ");
                                 String lastMsg = r.optString("lastMessage", "(Chưa có tin nhắn)");
                                 int unread = r.optInt("unreadCount", 0);
+                                unread = Math.max(unread, currentUnread.getOrDefault(id, 0));
                                 String avatarUrlRaw = r.optString("anhDaiDien_URL", "");
                                 String avatarUrl = normalizeAvatarUrl(avatarUrlRaw);
 
                                 Room room = new Room(id, name, lastMsg, avatarUrl);
-                                // Giữ lại unread lớn hơn nếu client đã tính cao hơn (tránh tụt về 0)
-                                int existingUnread = currentUnread.getOrDefault(id, 0);
-                                room.setUnreadCount(Math.max(unread, existingUnread));
+                                room.setUnreadCount(unread);
                                 roomList.add(room);
                             }
                             roomAdapter.notifyDataSetChanged();
+                            dbHelper.saveRooms(roomList);
                         } else {
                             Toast.makeText(requireContext(),
                                     response.optString("message", "Lỗi tải danh sách phòng"),
@@ -473,8 +499,15 @@ public class MessageFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        isVisibleToUser = true;
         // Khi quay lại màn hình danh sách, load lại API để cập nhật số tin chưa đọc chính xác nhất
         loadRoomsFromApi();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        isVisibleToUser = false;
     }
 
     private static class SearchItem {

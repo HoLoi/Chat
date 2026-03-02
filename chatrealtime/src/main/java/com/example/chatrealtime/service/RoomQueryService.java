@@ -76,8 +76,7 @@ public class RoomQueryService {
 
         FROM PHONGCHAT p
         JOIN THANHVIEN_PHONG tp ON p.maPhongChat = tp.maPhongChat
-                WHERE tp.maTaiKhoan = :uid
-                    AND tp.ngayXoa IS NULL
+            WHERE tp.maTaiKhoan = :uid
 
         HAVING (
             (
@@ -145,9 +144,8 @@ public class RoomQueryService {
                     ELSE p.anhDaiDien_URL
                 END AS anhDaiDien_URL
             FROM PHONGCHAT p
-            JOIN THANHVIEN_PHONG tp ON p.maPhongChat = tp.maPhongChat
-            WHERE tp.maTaiKhoan = :uid
-              AND tp.ngayXoa IS NULL
+                        JOIN THANHVIEN_PHONG tp ON p.maPhongChat = tp.maPhongChat
+                        WHERE tp.maTaiKhoan = :uid
               AND (
                     CASE WHEN p.loaiPhong = 0 THEN (
                         SELECT nd.tenNguoiDung

@@ -31,6 +31,16 @@ public interface ThanhVienPhongRepository
             @Param("maTaiKhoan") Integer maTaiKhoan
     );
 
+                @Modifying
+                @Transactional
+                @Query("""
+                                UPDATE ThanhVienPhong tv
+                                SET tv.ngayXoa = NULL
+                                WHERE tv.id.maPhongChat = :maPhongChat
+                                        AND tv.ngayXoa IS NOT NULL
+                """)
+                int restoreDeletedMembers(@Param("maPhongChat") Integer maPhongChat);
+
     @Query("""
         SELECT new map(
             tk.maTaiKhoan as maTaiKhoan,
@@ -46,6 +56,23 @@ public interface ThanhVienPhongRepository
                     AND tv.trangThaiThamGia = 'approved'
     """)
     List<Map<String, Object>> getMembers(
+            @Param("maPhongChat") Integer maPhongChat
+    );
+
+    @Query("""
+        SELECT new map(
+            tk.maTaiKhoan as maTaiKhoan,
+            nd.tenNguoiDung as tenNguoiDung,
+            nd.anhDaiDien as anhDaiDien,
+            tv.vaiTro as vaiTro
+        )
+        FROM ThanhVienPhong tv
+        JOIN TaiKhoan tk ON tv.id.maTaiKhoan = tk.maTaiKhoan
+        JOIN tk.nguoiDung nd
+        WHERE tv.id.maPhongChat = :maPhongChat
+            AND tv.trangThaiThamGia = 'approved'
+    """)
+    List<Map<String, Object>> getMembersIncludeDeleted(
             @Param("maPhongChat") Integer maPhongChat
     );
 
@@ -73,7 +100,10 @@ public interface ThanhVienPhongRepository
             @Param("maTaiKhoan") Integer maTaiKhoan
     );
 
-    boolean existsByIdMaPhongChatAndIdMaTaiKhoanAndNgayXoaIsNull(Integer maPhongChat, Integer maTaiKhoan);
+        boolean existsByIdMaPhongChatAndIdMaTaiKhoanAndNgayXoaIsNull(Integer maPhongChat, Integer maTaiKhoan);
+
+        // Dùng khi cần bỏ qua ràng buộc ngàyXoa (ví dụ hiển thị avatar 1-1 sau khi xóa cuộc trò chuyện)
+        boolean existsByIdMaPhongChatAndIdMaTaiKhoan(Integer maPhongChat, Integer maTaiKhoan);
 
         @Query("""
                 SELECT new map(

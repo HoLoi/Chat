@@ -88,7 +88,7 @@ public class ChatActivity extends AppCompatActivity {
         // Load tin nhắn OFFLINE
         List<Message> offlineMessages = dbHelper.getMessages(roomId, maTaiKhoan);
         if (!offlineMessages.isEmpty()) {
-            adapter.addMessages(offlineMessages);
+            adapter.setMessages(offlineMessages);
             recyclerMessages.scrollToPosition(adapter.getItemCount() - 1);
         }
 
@@ -346,7 +346,7 @@ public class ChatActivity extends AppCompatActivity {
         Message msg = new Message(noiDung, true, maTaiKhoan, loaiTinNhan, duongDanFile, null, session.getEmail(), status);
         adapter.addMessage(msg);
         recyclerMessages.scrollToPosition(adapter.getItemCount() - 1);
-        dbHelper.addMessage(roomId, maTaiKhoan, noiDung, loaiTinNhan, duongDanFile);
+        dbHelper.addMessage(roomId, maTaiKhoan, noiDung, loaiTinNhan, duongDanFile, status.name());
     }
 
     private void sendRealtime(String noiDung, String loaiTinNhan, String duongDanFile) {
@@ -415,9 +415,13 @@ public class ChatActivity extends AppCompatActivity {
                                     avatar = null;
                                 }
                                 String tenNguoiGui = item.optString("tenNguoiGui", "");
-                                tmp.add(new Message(noiDung, isMine, maGui, loaiTinNhan, fileUrl, avatar, tenNguoiGui));
+
+                                String moderationRaw = item.optString("trangThaiKiemDuyet", "");
+                                MessageModerationStatus moderation = MessageModerationStatus.from(moderationRaw);
+
+                                tmp.add(new Message(noiDung, isMine, maGui, loaiTinNhan, fileUrl, avatar, tenNguoiGui, moderation));
                             }
-                            adapter.addMessages(tmp);
+                            adapter.setMessages(tmp);
                             recyclerMessages.scrollToPosition(adapter.getItemCount() - 1);
 
                             // đánh dấu đã đọc khi đã vào phòng và tải xong
@@ -492,7 +496,10 @@ public class ChatActivity extends AppCompatActivity {
                 recyclerMessages.scrollToPosition(adapter.getItemCount() - 1);
 
                 // LƯU TIN NHẮN ĐẾN VÀO SQLITE
-                dbHelper.addMessage(roomId, maGui, noiDung, loaiTinNhan, fileUrl);
+                dbHelper.addMessage(roomId, maGui, noiDung, loaiTinNhan, fileUrl, null);
+
+                // Đang mở phòng này → đánh dấu đã đọc ngay để reset unread
+                markAsReadImmediately(roomId);
 
             } catch (Exception e) {
                 Log.e("WS_MSG_ERR", "❌ Lỗi nhận tin realtime: " + e.getMessage());

@@ -160,6 +160,8 @@ public class MessageService {
                     m.put("noiDung", t.getNoiDung());
                     m.put("loaiTinNhan", t.getLoaiTinNhan());
                     m.put("duongDanFile", t.getDuongDanFile());
+                                        m.put("trangThaiKiemDuyet", t.getTrangThaiKiemDuyet());
+                                        m.put("diemKiemDuyet", t.getDiemKiemDuyet());
                     m.put("tenNguoiGui", tenNguoiGui);
                     m.put("anhDaiDienNguoiGui", avatar != null ? avatar : "");
                     m.put("thoiGianGui", t.getThoiGianGui());
