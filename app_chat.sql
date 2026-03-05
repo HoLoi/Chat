@@ -1,6 +1,6 @@
 -- app_chat.sql
-CREATE DATABASE IF NOT EXISTS app_chat2 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE app_chat2;
+CREATE DATABASE IF NOT EXISTS app_chat3 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE app_chat3;
 
 -- NGUOIDUNG1
 CREATE TABLE IF NOT EXISTS NGUOIDUNG (
@@ -83,21 +83,6 @@ CREATE TABLE IF NOT EXISTS TRANGTHAI_TINNHAN (
     FOREIGN KEY (maTaiKhoan) REFERENCES TAIKHOAN(maTaiKhoan) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Yêu cầu tham gia nhóm (phục vụ private group hoặc yêu cầu vào public có kiểm duyệt)
-CREATE TABLE IF NOT EXISTS YEUCAU_THAMGIA_NHOM (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    maPhongChat INT NOT NULL,
-    maTaiKhoan INT NOT NULL,
-    trangThai VARCHAR(20) DEFAULT 'pending', -- pending, approved, rejected
-    lyDoTuChoi VARCHAR(255) DEFAULT NULL,
-    nguoiXuLy INT DEFAULT NULL,
-    ngayTao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    ngayXuLy TIMESTAMP NULL DEFAULT NULL,
-    FOREIGN KEY (maPhongChat) REFERENCES PHONGCHAT(maPhongChat) ON DELETE CASCADE,
-    FOREIGN KEY (maTaiKhoan) REFERENCES TAIKHOAN(maTaiKhoan) ON DELETE CASCADE,
-    FOREIGN KEY (nguoiXuLy) REFERENCES TAIKHOAN(maTaiKhoan)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 -- Log kiểm duyệt AI
 CREATE TABLE IF NOT EXISTS MODERATION_LOG (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -130,5 +115,5 @@ CREATE TABLE IF NOT EXISTS BANBE (
 CREATE INDEX idx_tinNhan_maPhongChat ON TINNHAN(maPhongChat);
 CREATE INDEX idx_thanhVienPhong_maTaiKhoan ON THANHVIEN_PHONG(maTaiKhoan);
 CREATE INDEX idx_thanhVienPhong_trangThai ON THANHVIEN_PHONG(trangThaiThamGia);
-CREATE INDEX idx_yeucau_phong ON YEUCAU_THAMGIA_NHOM(maPhongChat, trangThai);
+CREATE INDEX idx_yeucau_phong ON THANHVIEN_PHONG(maPhongChat, trangThaiThamGia);
 CREATE INDEX idx_moderation_tinNhan ON MODERATION_LOG(maTinNhan);

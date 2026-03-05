@@ -27,6 +27,7 @@ import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.chatrealtime.Constants;
 import com.example.chatrealtime.R;
+import com.example.chatrealtime.activity.TrangChuActivity;
 import com.example.chatrealtime.database.ChatDatabaseHelper;
 import com.example.chatrealtime.model.SessionManager;
 import com.example.chatrealtime.network.VolleyMultipartRequest;
@@ -242,7 +243,7 @@ public class MenuChatActivity extends AppCompatActivity {
         StringRequest req = new StringRequest(Request.Method.POST, url,
                 resp -> {
                     Toast.makeText(this, "Đã rời nhóm", Toast.LENGTH_SHORT).show();
-                    finish();
+                    navigateToMessageScreen();
                 },
                 err -> Toast.makeText(this, "Lỗi rời nhóm", Toast.LENGTH_SHORT).show()
         ) {
@@ -262,8 +263,9 @@ public class MenuChatActivity extends AppCompatActivity {
         String url = Constants.BASE_URL + "chat/delete-room";
         StringRequest req = new StringRequest(Request.Method.POST, url,
                 resp -> {
-                    Toast.makeText(this, "Đã giải tán nhóm", Toast.LENGTH_SHORT).show();
-                    finish();
+                    String msg = isGroup ? "Đã giải tán nhóm" : "Đã xóa cuộc trò chuyện";
+                    Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+                    navigateToMessageScreen();
                 },
                 err -> Toast.makeText(this, "Lỗi giải tán nhóm", Toast.LENGTH_SHORT).show()
         ) {
@@ -276,6 +278,13 @@ public class MenuChatActivity extends AppCompatActivity {
             }
         };
         Volley.newRequestQueue(this).add(req);
+    }
+
+    private void navigateToMessageScreen() {
+        Intent intent = new Intent(this, TrangChuActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        startActivity(intent);
+        finish();
     }
 
     private void confirmDeleteRoom() {

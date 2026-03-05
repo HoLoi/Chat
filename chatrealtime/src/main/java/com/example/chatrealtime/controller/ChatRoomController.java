@@ -152,8 +152,9 @@ public class ChatRoomController {
         return ResponseEntity.ok(res);
     }
 
-    // ================== XÓA PHÒNG (PHÍA NGƯỜI DÙNG) ==================
+        // ================== XÓA PHÒNG / GIẢI TÁN NHÓM ==================
     @PostMapping("/delete-room")
+        @Transactional
     public ResponseEntity<?> deleteRoom(
             @RequestParam Integer maPhongChat,
             @RequestParam Integer maTaiKhoan
@@ -162,6 +163,26 @@ public class ChatRoomController {
             return ResponseEntity.badRequest()
                     .body(Map.of("status", "error", "message", "Thiếu dữ liệu"));
         }
+
+                PhongChat room = phongChatRepo.findById(maPhongChat).orElse(null);
+                if (room == null) {
+                        return ResponseEntity.badRequest()
+                                        .body(Map.of("status", "error", "message", "Không tìm thấy phòng"));
+                }
+
+                Integer loaiPhong = room.getLoaiPhong();
+                boolean isGroup = loaiPhong != null && loaiPhong == 1;
+
+                if (isGroup) {
+                        Integer leader = room.getMaTruongNhom() != null ? room.getMaTruongNhom() : room.getMaTaiKhoanTao();
+                        if (!Objects.equals(leader, maTaiKhoan)) {
+                                return ResponseEntity.status(403)
+                                                .body(Map.of("status", "error", "message", "Chỉ trưởng nhóm mới được giải tán nhóm"));
+                        }
+
+                        phongChatRepo.delete(room);
+                        return ResponseEntity.ok(Map.of("status", "success", "message", "Đã giải tán nhóm"));
+                }
 
         int updated = thanhVienPhongRepo.updateNgayXoa(maPhongChat, maTaiKhoan);
 
@@ -224,7 +245,7 @@ public class ChatRoomController {
         return ResponseEntity.ok(res);
     }
 
-    // ================== XÓA THÀNH VIÊN (trưởng nhóm) ==================
+        // ================== XÓA THÀNH VIÊN (trưởng nhóm, xóa cứng) ==================
     @PostMapping("/remove-member")
     @Transactional
     public ResponseEntity<?> removeMember(
@@ -239,16 +260,33 @@ public class ChatRoomController {
                     .body(Map.of("status", "error", "message", "Không tìm thấy phòng"));
         }
 
-        Integer leader = room.getMaTruongNhom() != null ? room.getMaTruongNhom() : room.getMaTaiKhoanTao();
-        if (!Objects.equals(leader, maTaiKhoan)) {
-            return ResponseEntity.status(403)
-                    .body(Map.of("status", "error", "message", "Bạn không có quyền xóa thành viên"));
-        }
+                Integer leader = room.getMaTruongNhom() != null ? room.getMaTruongNhom() : room.getMaTaiKhoanTao();
 
-        if (Objects.equals(leader, memberId)) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("status", "error", "message", "Không thể tự xóa trưởng nhóm"));
-        }
+                // Thành viên tự rời nhóm
+                if (Objects.equals(maTaiKhoan, memberId)) {
+                        if (Objects.equals(leader, maTaiKhoan)) {
+                                return ResponseEntity.badRequest()
+                                                .body(Map.of("status", "error", "message", "Trưởng nhóm không thể rời nhóm trực tiếp"));
+                        }
+
+                        int left = thanhVienPhongRepo.removeMember(maPhongChat, maTaiKhoan);
+                        if (left > 0) {
+                                return ResponseEntity.ok(Map.of("status", "success", "message", "Đã rời nhóm"));
+                        }
+                        return ResponseEntity.badRequest()
+                                        .body(Map.of("status", "error", "message", "Bạn không còn trong nhóm"));
+                }
+
+                // Trưởng nhóm xóa thành viên khác
+                if (!Objects.equals(leader, maTaiKhoan)) {
+                        return ResponseEntity.status(403)
+                                        .body(Map.of("status", "error", "message", "Bạn không có quyền xóa thành viên"));
+                }
+
+                if (Objects.equals(leader, memberId)) {
+                        return ResponseEntity.badRequest()
+                                        .body(Map.of("status", "error", "message", "Không thể tự xóa trưởng nhóm"));
+                }
 
         int updated = thanhVienPhongRepo.removeMember(maPhongChat, memberId);
         if (updated > 0) {

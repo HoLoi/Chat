@@ -90,8 +90,7 @@ public interface ThanhVienPhongRepository
     @Modifying
     @Transactional
     @Query("""
-        UPDATE ThanhVienPhong tv
-        SET tv.ngayXoa = CURRENT_TIMESTAMP
+                                DELETE FROM ThanhVienPhong tv
         WHERE tv.id.maPhongChat = :maPhongChat
           AND tv.id.maTaiKhoan = :maTaiKhoan
     """)
@@ -100,6 +99,7 @@ public interface ThanhVienPhongRepository
             @Param("maTaiKhoan") Integer maTaiKhoan
     );
 
+        // Dùng khi cần kiểm tra thành viên đang hoạt động (chưa xóa)
         boolean existsByIdMaPhongChatAndIdMaTaiKhoanAndNgayXoaIsNull(Integer maPhongChat, Integer maTaiKhoan);
 
         // Dùng khi cần bỏ qua ràng buộc ngàyXoa (ví dụ hiển thị avatar 1-1 sau khi xóa cuộc trò chuyện)
@@ -143,7 +143,6 @@ public interface ThanhVienPhongRepository
         @Query("""
                 UPDATE ThanhVienPhong tv
                 SET tv.trangThaiThamGia = 'rejected',
-                        tv.ngayXoa = CURRENT_TIMESTAMP,
                         tv.nguoiDuyet = :nguoiDuyet
                 WHERE tv.id.maPhongChat = :maPhongChat
                     AND tv.id.maTaiKhoan = :maTaiKhoan
