@@ -1,35 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_height="match_parent"
-    android:layout_width="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#ffffff">
+    android:background="#F3F3F3">
 
-<!--    fragment_friends-->
+    ```
+    <!-- HEADER -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="70dp"
         android:background="@drawable/background_main"
-        android:orientation="horizontal">
+        android:orientation="vertical"
+        android:padding="12dp">
 
-        <ImageView
-            android:layout_width="50dp"
-            android:layout_height="match_parent"
-            android:src="@drawable/ic_search"/>
-
-        <EditText
-            android:id="@+id/et_search_friend"
+        <!-- SEARCH -->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Tìm kiếm"/>
+            android:layout_height="45dp"
+            android:background="@drawable/bg_search"
+            android:gravity="center_vertical"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp">
+
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:src="@drawable/ic_search"
+                app:tint="#646464"/>
+
+            <EditText
+                android:id="@+id/et_search_friend"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@android:color/transparent"
+                android:hint="Tìm kiếm bạn bè..."
+                android:paddingStart="8dp"/>
+        </LinearLayout>
+
     </LinearLayout>
 
+
+    <!-- TAB -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="68dp"
         android:orientation="horizontal"
-        android:weightSum="2">
+        android:background="#FFFFFF">
 
         <Button
             android:id="@+id/btn_banbe"
@@ -43,69 +61,81 @@
 
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/tv_suggestion_header"
+
+    <!-- CARD chứa chức năng -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="10dp"
-        android:layout_marginRight="10dp"
-        android:layout_marginTop="6dp"
-        android:text="Gợi ý kết bạn"
-        android:textStyle="bold"
-        android:textColor="@color/black"
-        android:visibility="gone" />
+        android:background="@drawable/bg_card"
+        android:orientation="vertical"
+        android:layout_margin="12dp"
+        android:padding="12dp">
 
-    <Button
-        android:id="@+id/btn_loi_moi_ket_ban"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginRight="10dp"
-        android:layout_marginLeft="10dp"
-        android:text="Lời mời kết bạn"
-        android:backgroundTint="#2196F3"
-        android:textColor="@color/white"
-        android:visibility="gone"
-        />
+        <TextView
+            android:id="@+id/tv_suggestion_header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Gợi ý kết bạn"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:layout_marginBottom="6dp"
+            android:visibility="gone"/>
 
-    <Button
-        android:id="@+id/btn_them_ban_be"
-        android:text="+ Thêm bạn"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginRight="10dp"
-        android:layout_marginLeft="10dp"
-        android:backgroundTint="#2196F3"
-        android:textColor="@color/white"
-        android:visibility="gone" />
+        <Button
+            android:id="@+id/btn_loi_moi_ket_ban"
+            android:layout_width="match_parent"
+            android:layout_height="45dp"
+            android:text="Lời mời kết bạn"
+            android:textColor="@color/white"
+            app:backgroundTint="@null"
+            android:background="@drawable/bg_button"
+            android:visibility="gone"/>
 
-    <Button
-        android:id="@+id/btn_goi_y_ket_ban"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginRight="10dp"
-        android:layout_marginLeft="10dp"
-        android:text="Gợi ý kết bạn"
-        android:backgroundTint="#4CAF50"
-        android:textColor="@color/white"
-        android:visibility="gone" />
+        <Button
+            android:id="@+id/btn_them_ban_be"
+            android:layout_width="match_parent"
+            android:layout_height="45dp"
+            android:text="+ Thêm bạn"
+            android:layout_marginTop="6dp"
+            android:textColor="@color/white"
+            app:backgroundTint="@null"
+            android:background="@drawable/bg_button"
+            android:visibility="gone"/>
 
-    <Button
-        android:id="@+id/btn_tao_nhom"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginRight="10dp"
-        android:layout_marginLeft="10dp"
-        android:text="Tạo nhóm"
-        android:backgroundTint="#673AB7"
-        android:textColor="@color/white"
-        android:visibility="gone" />
+        <Button
+            android:id="@+id/btn_goi_y_ket_ban"
+            android:layout_width="match_parent"
+            android:layout_height="45dp"
+            android:text="Gợi ý kết bạn"
+            android:layout_marginTop="6dp"
+            android:textColor="@color/white"
+            app:backgroundTint="@null"
+            android:background="@drawable/bg_button"
+            android:visibility="gone"/>
 
-    <!-- ListView hiển thị nội dung -->
+        <Button
+            android:id="@+id/btn_tao_nhom"
+            android:layout_width="match_parent"
+            android:layout_height="45dp"
+            android:text="Tạo nhóm"
+            android:layout_marginTop="6dp"
+            android:textColor="@color/white"
+            app:backgroundTint="@null"
+            android:background="@drawable/bg_button"
+            android:visibility="gone"/>
+
+    </LinearLayout>
+
+
+    <!-- LIST -->
     <ListView
         android:id="@+id/list_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="10dp" />
-
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:divider="#EAEAEA"
+        android:dividerHeight="1dp"
+        android:padding="6dp"/>
+    ```
 
 </LinearLayout>

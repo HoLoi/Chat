@@ -5,12 +5,14 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:padding="12dp"
-    android:gravity="center_vertical">
+    android:gravity="center_vertical"
+    android:background="@drawable/bg_user_item"
+    >
 
     <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/ivAvatar"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
         android:src="@drawable/avatar_default"
         android:scaleType="centerCrop"
         app:shapeAppearanceOverlay="@style/CircularImage"
@@ -28,24 +30,29 @@
             android:layout_height="wrap_content"
             android:text="Tên người dùng"
             android:textSize="16sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:textColor="#111827" />
 
         <TextView
             android:id="@+id/tvStatus"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Gợi ý kết bạn"
-            android:textColor="@android:color/darker_gray"
-            android:textSize="13sp" />
+            android:textColor="#6B7280"
+            android:textSize="13sp"
+            android:layout_marginTop="2dp" />
     </LinearLayout>
 
     <Button
         android:id="@+id/btnAction"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="36dp"
         android:text="Kết bạn"
-        android:minWidth="96dp"
-        android:backgroundTint="@color/blue"
-        android:textColor="@color/white" />
+        android:minWidth="90dp"
+        app:backgroundTint="@null"
+        android:background="@drawable/bg_add_friend"
+        android:textColor="@android:color/white"
+        android:textSize="13sp"
+        android:textAllCaps="false"/>
 
 </LinearLayout>

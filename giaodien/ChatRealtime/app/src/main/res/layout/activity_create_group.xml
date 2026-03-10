@@ -1,17 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp"
-    android:background="@android:color/white">
+    android:background="#F3F3F3"
+    android:fitsSystemWindows="true">
 
+    <!-- HEADER giống màn chat -->
     <LinearLayout
         android:id="@+id/header"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="56dp"
+        android:background="@drawable/background_main"
         android:orientation="horizontal"
         android:gravity="center_vertical"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -21,96 +26,111 @@
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:src="@drawable/ic_back"
-            android:padding="6dp"
-            android:contentDescription="Quay lại" />
+            android:padding="5dp"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Tạo nhóm"
-            android:textSize="18sp"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp"
             android:textStyle="bold"
-            android:layout_marginStart="8dp" />
+            android:layout_marginStart="12dp"/>
     </LinearLayout>
 
-    <EditText
-        android:id="@+id/edtGroupName"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:hint="Tên nhóm"
-        android:inputType="textCapWords"
-        app:layout_constraintTop_toBottomOf="@id/header"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp" />
 
+    <!-- CARD chứa nội dung -->
     <LinearLayout
-        android:id="@+id/privacy_row"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        app:layout_constraintTop_toBottomOf="@id/edtGroupName"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="12dp">
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Chế độ nhóm"
-            android:textSize="16sp" />
-
-        <TextView
-            android:id="@+id/tvPrivacy"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Public"
-            android:textSize="14sp"
-            android:textColor="@android:color/darker_gray"
-            android:layout_marginEnd="8dp" />
-
-        <Switch
-            android:id="@+id/switchPrivacy"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Private" />
-    </LinearLayout>
-
-    <TextView
-        android:id="@+id/tvMemberHint"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="Chọn thành viên (tối thiểu 2 người, tối đa 99, bạn sẽ được thêm tự động)"
-        android:textSize="13sp"
-        android:textColor="@android:color/darker_gray"
-        app:layout_constraintTop_toBottomOf="@id/privacy_row"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="8dp" />
-
-    <ListView
-        android:id="@+id/lvFriends"
+        android:id="@+id/cardContent"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:dividerHeight="8dp"
-        app:layout_constraintTop_toBottomOf="@id/tvMemberHint"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:background="@drawable/bg_card"
+        app:layout_constraintTop_toBottomOf="@id/header"
+        app:layout_constraintBottom_toTopOf="@id/btnCreate"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/btnCreate"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="16dp" />
+        android:layout_margin="12dp">
 
+        <!-- tên nhóm -->
+        <EditText
+            android:id="@+id/edtGroupName"
+            android:layout_width="match_parent"
+            android:layout_height="45dp"
+            android:background="@drawable/bg_input"
+            android:hint="Tên nhóm"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:textSize="15sp"/>
+
+        <!-- privacy -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="12dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Chế độ nhóm"
+                android:textSize="16sp"/>
+
+            <TextView
+                android:id="@+id/tvPrivacy"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Public"
+                android:textColor="#777"
+                android:layout_marginEnd="8dp"
+                android:textSize="14sp"/>
+
+            <Switch
+                android:id="@+id/switchPrivacy"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+
+        <!-- hint -->
+        <TextView
+            android:id="@+id/tvMemberHint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Chọn thành viên (tối thiểu 2 người)"
+            android:textColor="#777"
+            android:textSize="13sp"
+            android:layout_marginTop="8dp"/>
+
+        <!-- list -->
+        <ListView
+            android:id="@+id/lvFriends"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:divider="#EEEEEE"
+            android:dividerHeight="1dp"
+            android:layout_marginTop="8dp"/>
+
+    </LinearLayout>
+
+
+    <!-- BUTTON -->
     <Button
         android:id="@+id/btnCreate"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="50dp"
         android:text="Tạo nhóm"
-        android:backgroundTint="#673AB7"
-        android:textColor="@color/white"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        app:backgroundTint="@null"
+        android:background="@drawable/bg_button"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        android:layout_margin="12dp"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

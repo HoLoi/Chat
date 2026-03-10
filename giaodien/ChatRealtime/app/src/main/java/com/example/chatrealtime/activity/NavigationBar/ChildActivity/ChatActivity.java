@@ -51,7 +51,7 @@ public class ChatActivity extends AppCompatActivity {
     private RecyclerView recyclerMessages;
     private TextView txtNameChat;
     private EditText edtMessage;
-    private Button btnSend;
+    private ImageView btnSend;
     private ImageView btnBack, btnMenu;
     private ImageButton btnAttach;
 

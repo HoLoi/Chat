@@ -1,16 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_height="match_parent"
-    android:layout_width="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:background="@drawable/bg_profile"
-    android:id="@+id/main">
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_profile">
 
+    <!-- HEADER -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="10dp"
+        android:padding="16dp"
         android:weightSum="7">
 
         <ImageView
@@ -25,137 +26,184 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="5"
-            android:gravity="center"
             android:text="Thông tin người dùng"
-            android:textSize="20sp"
+            android:textSize="22sp"
             android:textStyle="bold"
-            android:layout_gravity="center"/>
+            android:gravity="center"/>
 
         <ImageView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"/>
-
     </LinearLayout>
 
+
+    <!-- CARD THÔNG TIN -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_marginTop="180dp"
         android:background="#FFFFFF"
-        android:layout_marginTop="125dp"
         android:orientation="vertical"
-        android:padding="10dp">
+        android:padding="20dp"
+        android:elevation="6dp">
 
+        <!-- Họ tên -->
         <LinearLayout
-            style="@style/linNearLayout_Information"
-            android:layout_marginTop="70dp">
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_input_information"
+            android:padding="14dp"
+            android:layout_marginTop="70dp"
+            android:layout_marginBottom="14dp">
+
             <TextView
-                style="@style/tv_Information"
-                android:text="Họ tên"/>
+                android:text="Họ tên"
+                android:textSize="13sp"
+                android:textColor="#888888"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
             <EditText
-                style="@style/edt_Information"
+                android:id="@+id/edt_hotenI"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:background="@null"
-                android:hint="Nhập họ tên"
-                android:id="@+id/edt_hotenI"/>
+                android:textSize="16sp"
+                android:hint="Nhập họ tên"/>
         </LinearLayout>
 
+
+        <!-- Số điện thoại -->
         <LinearLayout
-            style="@style/linNearLayout_Information">
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_input_information"
+            android:padding="14dp"
+            android:layout_marginBottom="14dp">
+
             <TextView
-                style="@style/tv_Information"
-                android:text="Số di động"/>
+                android:text="Số di động"
+                android:textSize="13sp"
+                android:textColor="#888888"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
             <EditText
-                style="@style/edt_Information"
+                android:id="@+id/edt_didongI"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:background="@null"
+                android:textSize="16sp"
                 android:inputType="phone"
-                android:hint="Nhập di động"
-                android:id="@+id/edt_didongI"/>
+                android:hint="Nhập di động"/>
         </LinearLayout>
 
+
+        <!-- Ngày sinh -->
         <LinearLayout
-            style="@style/linNearLayout_Information">
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_input_information"
+            android:padding="14dp"
+            android:layout_marginBottom="14dp">
+
             <TextView
-                style="@style/tv_Information"
-                android:text="Ngày sinh"/>
+                android:text="Ngày sinh"
+                android:textSize="13sp"
+                android:textColor="#888888"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
             <EditText
                 android:id="@+id/edtNgaySinhI"
-                style="@style/edt_Information"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:background="@null"
+                android:textSize="16sp"
                 android:hint="Chọn ngày sinh"
                 android:focusable="false"
-                android:inputType="none"
-                android:drawablePadding="8dp" />
-
+                android:inputType="none"/>
         </LinearLayout>
 
+
+        <!-- Giới tính -->
         <LinearLayout
-            style="@style/linNearLayout_Information">
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_input_information"
+            android:padding="14dp"
+            android:layout_marginBottom="20dp">
+
             <TextView
-                style="@style/tv_Information"
-                android:text="Giới tính"/>
-            <LinearLayout
-                android:layout_width="0dp"
+                android:text="Giới tính"
+                android:textSize="13sp"
+                android:textColor="#888888"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <RadioGroup
+                android:id="@+id/radioGroupGioiTinhI"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="2">
-                <RadioGroup
-                    android:id="@+id/radioGroupGioiTinhI"
-                    android:layout_width="match_parent"
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:id="@+id/radioBtnNamI"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:weightSum="2">
+                    android:text="Nam"/>
 
-                    <RadioButton
-                        android:id="@+id/radioBtnNamI"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Nam"
-                        android:layout_weight="1"/>
-                    <RadioButton
-                        android:id="@+id/radioBtnNuI"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Nữ"
-                        android:layout_weight="1"/>
+                <RadioButton
+                    android:id="@+id/radioBtnNuI"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Nữ"
+                    android:layout_marginStart="30dp"/>
 
-                </RadioGroup>
-            </LinearLayout>
+            </RadioGroup>
+
         </LinearLayout>
 
 
         <Button
             android:id="@+id/btn_capnhat_information"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:backgroundTint="#2196F3"
+            android:layout_height="55dp"
             android:text="Cập Nhật"
-            android:textSize="20sp"
+            android:textSize="18sp"
             android:textStyle="bold"
-            android:padding="10dp"
-            android:layout_margin="20dp"
-            android:layout_gravity="center"/>
+            android:backgroundTint="#2F80ED"/>
+
     </LinearLayout>
 
+
+    <!-- AVATAR -->
     <FrameLayout
-        android:layout_width="120dp"
-        android:layout_height="120dp"
-        android:layout_gravity="center|top"
-        android:layout_marginTop="70dp">
+        android:layout_width="130dp"
+        android:layout_height="130dp"
+        android:layout_gravity="top|center"
+        android:layout_marginTop="110dp"
+        android:elevation="8dp">
 
         <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/imageviewavatarI"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_gravity="center|top"
             android:src="@drawable/avatar_default"
             android:scaleType="centerCrop"
-            app:shapeAppearanceOverlay="@style/CircularImage"
-            android:id="@+id/imageviewavatarI"/>
+            app:shapeAppearanceOverlay="@style/CircularImage"/>
 
         <ImageView
             android:id="@+id/imageviewEditavatarI"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:src="@drawable/ic_edit"
-            android:layout_gravity="end|bottom"/>
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="end|bottom"
+            android:src="@drawable/ic_edit"/>
 
     </FrameLayout>
 

@@ -1,128 +1,119 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_height="match_parent"
-    android:layout_width="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:background="@drawable/bg_profile"
-    android:id="@+id/main">
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_profile">
 
+    <!-- Header -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="56dp"
         android:orientation="horizontal"
-        android:padding="10dp"
-        android:weightSum="7">
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp">
 
         <ImageView
             android:id="@+id/iv_back_add_friend"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:src="@drawable/ic_arrow_back"
-            android:layout_gravity="center"/>
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:src="@drawable/ic_arrow_back"/>
 
         <TextView
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="5"
-            android:gravity="center"
-            android:text="Thêm bạn"
+            android:text="Thêm bạn     "
             android:textSize="20sp"
             android:textStyle="bold"
-            android:layout_gravity="center"/>
-
-        <ImageView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"/>
-
+            android:gravity="center"/>
     </LinearLayout>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#FFFFFF"
-        android:layout_marginTop="125dp"
-        android:orientation="vertical"
-        android:padding="10dp">
 
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="220dp"
-            android:padding="10dp"
-            android:weightSum="5">
-
-            <EditText
-                android:id="@+id/edtThemban"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="4"
-                android:background="@null"
-                android:hint="Nhập email"
-                android:paddingLeft="10dp"/>
-            <Button
-                android:id="@+id/btnGuiketban"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Ok"
-                android:layout_marginLeft="10dp"
-                android:backgroundTint="#2196F3"/>
-
-        </LinearLayout>
-
-
-        <Button
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:text="Quét mã QR"
-            android:textSize="20sp"
-            android:textColor="#111111"
-            android:gravity="left|center"
-            android:drawableLeft="@drawable/ic_qr_code"
-            android:backgroundTint="@color/white"/>
-
-
-
-
-
-    </LinearLayout>
-
+    <!-- QR Card -->
     <FrameLayout
         android:layout_width="230dp"
         android:layout_height="230dp"
         android:layout_gravity="center|top"
-        android:layout_marginTop="70dp"
-        android:padding="10dp"
-        android:background="@drawable/background_main">
+        android:layout_marginTop="80dp"
+        android:background="@drawable/background_main"
+        android:padding="10dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Tên"
-            android:textSize="15sp"
+            android:textSize="16sp"
             android:textStyle="bold"
             android:layout_gravity="center|top"/>
+
         <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/imageviewavatarI"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_gravity="center|top"
+            android:layout_margin="50dp"
             android:src="@drawable/avatar_default"
             android:scaleType="centerCrop"
-            app:shapeAppearanceOverlay="@style/CircularImage"
-            android:layout_margin="50dp"
-            android:id="@+id/imageviewavatarI"/>
+            app:shapeAppearanceOverlay="@style/CircularImage"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Quét mã để thêm bạn với tôi"
             android:layout_gravity="center|bottom"/>
-
     </FrameLayout>
+
+
+    <!-- Nội dung dưới -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="340dp"
+        android:background="#FFFFFF"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Nhập email -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <EditText
+                android:id="@+id/edtThemban"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="match_parent"
+                android:hint="Nhập email"
+                android:background="@null"
+                android:textSize="16sp"/>
+
+            <Button
+                android:id="@+id/btnGuiketban"
+                android:layout_width="70dp"
+                android:layout_height="40dp"
+                android:text="OK"
+                android:textAllCaps="false"
+                android:layout_marginStart="8dp"
+                android:backgroundTint="#2196F3"/>
+        </LinearLayout>
+
+
+        <!-- QR Button -->
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="20dp"
+            android:text="Quét mã QR"
+            android:textSize="18sp"
+            android:textColor="#111111"
+            android:gravity="start|center_vertical"
+            android:drawableLeft="@drawable/ic_qr_code"
+            android:paddingStart="10dp"
+            android:backgroundTint="@color/white"/>
+
+    </LinearLayout>
 
 </FrameLayout>
