@@ -256,9 +256,10 @@ public class InformationActivity extends AppCompatActivity {
                         radioButtonNu.setChecked("Nữ".equalsIgnoreCase(gioiTinh));
 
                         String avatar = data.optString("anhDaiDien_URL", "");
-                        if (!avatar.isEmpty()) {
+                        String avatarUrl = normalizeImageUrl(avatar);
+                        if (!avatarUrl.isEmpty()) {
                             Glide.with(this)
-                                    .load(Constants.BASE_URL.replace("/api/", "") + avatar)
+                                    .load(avatarUrl)
                                     .placeholder(R.drawable.avatar_default)
                                     .into(imageViewAvatar);
                         }
@@ -278,6 +279,17 @@ public class InformationActivity extends AppCompatActivity {
         } catch (Exception e) {
             return input;
         }
+    }
+
+    private String normalizeImageUrl(String raw) {
+        if (raw == null) return "";
+        String trimmed = raw.trim();
+        if (trimmed.isEmpty() || "null".equalsIgnoreCase(trimmed) || "/null".equalsIgnoreCase(trimmed)) {
+            return "";
+        }
+        if (trimmed.startsWith("http")) return trimmed;
+        if (trimmed.startsWith("/")) return Constants.IMAGE_BASE_URL + trimmed;
+        return Constants.IMAGE_BASE_URL + "/" + trimmed;
     }
 
 

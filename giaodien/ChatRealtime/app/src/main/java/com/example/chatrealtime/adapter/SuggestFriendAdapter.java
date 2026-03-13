@@ -75,8 +75,8 @@ public class SuggestFriendAdapter extends BaseAdapter {
         holder.tvName.setText(name);
 
         String avatar = user.optString("anhDaiDien_URL", "");
-        if (!avatar.isEmpty()) {
-            String full = avatar.startsWith("http") ? avatar : Constants.IMAGE_BASE_URL + avatar;
+        String full = normalizeImageUrl(avatar);
+        if (!full.isEmpty()) {
             Glide.with(context).load(full).placeholder(R.drawable.avatar_default).error(R.drawable.avatar_default).into(holder.ivAvatar);
         } else {
             holder.ivAvatar.setImageResource(R.drawable.avatar_default);
@@ -202,6 +202,17 @@ public class SuggestFriendAdapter extends BaseAdapter {
         if (status.equalsIgnoreCase("cho")) status = "pending";
         if (status.isEmpty()) status = "not_friend";
         return status;
+    }
+
+    private String normalizeImageUrl(String raw) {
+        if (raw == null) return "";
+        String trimmed = raw.trim();
+        if (trimmed.isEmpty() || "null".equalsIgnoreCase(trimmed) || "/null".equalsIgnoreCase(trimmed)) {
+            return "";
+        }
+        if (trimmed.startsWith("http")) return trimmed;
+        if (trimmed.startsWith("/")) return Constants.IMAGE_BASE_URL + trimmed;
+        return Constants.IMAGE_BASE_URL + "/" + trimmed;
     }
 
     static class ViewHolder {

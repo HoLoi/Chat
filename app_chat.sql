@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS PHONGCHAT (
     loaiPhong TINYINT(1) DEFAULT 0,
     anhDaiDien_URL VARCHAR(255) DEFAULT NULL,
     ngayTao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    trangThaiPhong VARCHAR(20) DEFAULT NULL, -- active, archived, deleted
     maTaiKhoanTao INT,
     FOREIGN KEY (maTaiKhoanTao) REFERENCES TAIKHOAN(maTaiKhoan),
     FOREIGN KEY (maTruongNhom) REFERENCES TAIKHOAN(maTaiKhoan)
@@ -76,7 +77,7 @@ CREATE TABLE IF NOT EXISTS TINNHAN (
 CREATE TABLE IF NOT EXISTS TRANGTHAI_TINNHAN (
     maTinNhan INT,
     maTaiKhoan INT,
-    trangThai VARCHAR(50) DEFAULT 'sent', -- sent, delivered, read
+    trangThai VARCHAR(50) DEFAULT 'sent', -- sent, read
     thoiGianCapNhat TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (maTinNhan, maTaiKhoan),
     FOREIGN KEY (maTinNhan) REFERENCES TINNHAN(maTinNhan) ON DELETE CASCADE,

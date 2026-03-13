@@ -23,6 +23,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.android.volley.Request;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.chatrealtime.Constants;
@@ -39,9 +40,12 @@ import com.example.chatrealtime.network.VolleyMultipartRequest.DataPart;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class ChatActivity extends AppCompatActivity {
@@ -62,6 +66,8 @@ public class ChatActivity extends AppCompatActivity {
     private int roomId;
     private int maTaiKhoan;
     private String roomName;
+    private boolean isGroupChat = false;
+    private boolean hasResolvedRoomType = false;
     private ChatDatabaseHelper dbHelper;
 
     private static final String BASE_URL = Constants.BASE_URL;
@@ -85,13 +91,6 @@ public class ChatActivity extends AppCompatActivity {
 
         dbHelper = new ChatDatabaseHelper(this);
 
-        // Load tin nhắn OFFLINE
-        List<Message> offlineMessages = dbHelper.getMessages(roomId, maTaiKhoan);
-        if (!offlineMessages.isEmpty()) {
-            adapter.setMessages(offlineMessages);
-            recyclerMessages.scrollToPosition(adapter.getItemCount() - 1);
-        }
-
         // Nhận từ notification/bubble: ưu tiên "maPhong", fallback "chatId"
         roomId = getIntent().getIntExtra("maPhong", -1);
         if (roomId == -1) {
@@ -106,16 +105,24 @@ public class ChatActivity extends AppCompatActivity {
             return;
         }
 
+        // Load tin nhắn OFFLINE theo đúng room hiện tại
+        List<Message> offlineMessages = dbHelper.getMessages(roomId, maTaiKhoan);
+        if (!offlineMessages.isEmpty()) {
+            adapter.setMessages(offlineMessages);
+            recyclerMessages.scrollToPosition(adapter.getItemCount() - 1);
+        }
+
         roomName = getIntent().getStringExtra("roomName");
         String friendName = getIntent().getStringExtra("friendName");
-        if (roomName == null || roomName.isEmpty()) {
-            if (friendName != null && !friendName.isEmpty()) {
-                roomName = friendName;
-            } else {
-                roomName = "Đoạn chat";
-            }
+        boolean isGroupFromIntent = getIntent().getBooleanExtra("isGroup", false);
+        isGroupChat = isGroupFromIntent;
+        if (!isGroupFromIntent && friendName != null && !friendName.isEmpty()) {
+            roomName = friendName;
+        } else if (roomName == null || roomName.isEmpty()) {
+            roomName = "Đoạn chat";
         }
         txtNameChat.setText(roomName);
+        resolveRoomDisplayNameFromServer();
 
         CURRENT_OPEN_ROOM = roomId;
 
@@ -148,7 +155,7 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     private void setupRecyclerView() {
-        adapter = new MessageAdapter(this, messageList);
+        adapter = new MessageAdapter(this, messageList, maTaiKhoan);
         recyclerMessages.setLayoutManager(new LinearLayoutManager(this));
         recyclerMessages.setAdapter(adapter);
     }
@@ -201,13 +208,102 @@ public class ChatActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Log.e("OPEN_MENU", " Mở menu chat cho phòng " + roomId);
-                Intent intent = new Intent(ChatActivity.this, MenuChatActivity.class);
-                intent.putExtra("maPhong", roomId);
-                intent.putExtra("roomName", roomName);
-                startActivity(intent);
-                overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
+                openProperMenu();
             }
         });
+    }
+
+    private void openProperMenu() {
+        if (hasResolvedRoomType) {
+            startMenuByRoomType(isGroupChat);
+            return;
+        }
+
+        String url = BASE_URL + "chat/room-info"
+                + "?maPhongChat=" + roomId
+                + "&maTaiKhoan=" + maTaiKhoan;
+
+        StringRequest req = new StringRequest(Request.Method.GET, url,
+                response -> {
+                    boolean fallbackGroup = isGroupChat;
+                    try {
+                        JSONObject obj = new JSONObject(response.trim());
+                        if ("success".equalsIgnoreCase(obj.optString("status"))) {
+                            JSONObject room = obj.optJSONObject("room");
+                            JSONArray members = obj.optJSONArray("members");
+                            fallbackGroup = isGroupRoom(room, members);
+                        }
+                    } catch (Exception e) {
+                        Log.e("OPEN_MENU", "Không parse được room-info để mở menu", e);
+                    }
+
+                    isGroupChat = fallbackGroup;
+                    hasResolvedRoomType = true;
+                    startMenuByRoomType(isGroupChat);
+                },
+                error -> {
+                    Log.e("OPEN_MENU", "Không tải được room-info để mở menu: " + error);
+                    resolveRoomTypeByMembersAndOpenMenu();
+                }) {
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Authorization", "Bearer " + session.getToken());
+                return headers;
+            }
+
+            @Override
+            protected com.android.volley.Response<String> parseNetworkResponse(com.android.volley.NetworkResponse response) {
+                try {
+                    String parsed = new String(response.data, java.nio.charset.StandardCharsets.UTF_8);
+                    return com.android.volley.Response.success(parsed, com.android.volley.toolbox.HttpHeaderParser.parseCacheHeaders(response));
+                } catch (Exception e) {
+                    return com.android.volley.Response.error(new com.android.volley.ParseError(e));
+                }
+            }
+        };
+
+        Volley.newRequestQueue(this).add(req);
+    }
+
+    private void resolveRoomTypeByMembersAndOpenMenu() {
+        String url = BASE_URL + "chat/room-members?maPhongChat=" + roomId;
+
+        JsonObjectRequest req = new JsonObjectRequest(Request.Method.GET, url, null,
+                response -> {
+                    boolean fallbackGroup = isGroupChat;
+                    try {
+                        if ("success".equalsIgnoreCase(response.optString("status"))) {
+                            JSONArray members = response.optJSONArray("members");
+                            fallbackGroup = members != null && members.length() > 2;
+                        }
+                    } catch (Exception e) {
+                        Log.e("OPEN_MENU", "Không parse được room-members để mở menu", e);
+                    }
+
+                    isGroupChat = fallbackGroup;
+                    hasResolvedRoomType = true;
+                    startMenuByRoomType(isGroupChat);
+                },
+                error -> {
+                    Log.e("OPEN_MENU", "Không tải được room-members để mở menu: " + error);
+                    Toast.makeText(this, "Không xác định được loại phòng, vui lòng thử lại", Toast.LENGTH_SHORT).show();
+                }
+        );
+
+        Volley.newRequestQueue(this).add(req);
+    }
+
+    private void startMenuByRoomType(boolean isGroup) {
+        Intent intent = new Intent(
+                ChatActivity.this,
+                isGroup ? MenuChatNhomActivity.class : MenuChatActivity.class
+        );
+        intent.putExtra("maPhong", roomId);
+        intent.putExtra("roomName", roomName);
+        intent.putExtra("isGroup", isGroup);
+        startActivity(intent);
+        overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
     }
 
     /**
@@ -343,10 +439,11 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     private void appendMessageToUi(String noiDung, String loaiTinNhan, String duongDanFile, MessageModerationStatus status) {
-        Message msg = new Message(noiDung, true, maTaiKhoan, loaiTinNhan, duongDanFile, null, session.getEmail(), status);
+        String nowTime = new SimpleDateFormat("dd/MM HH:mm", Locale.getDefault()).format(new Date());
+        Message msg = new Message(null, noiDung, true, maTaiKhoan, null, loaiTinNhan, duongDanFile, nowTime, "sent", null, session.getEmail(), status);
         adapter.addMessage(msg);
         recyclerMessages.scrollToPosition(adapter.getItemCount() - 1);
-        dbHelper.addMessage(roomId, maTaiKhoan, noiDung, loaiTinNhan, duongDanFile, status.name());
+        dbHelper.addMessage(roomId, null, maTaiKhoan, null, noiDung, loaiTinNhan, duongDanFile, nowTime, "sent", status.name());
     }
 
     private void sendRealtime(String noiDung, String loaiTinNhan, String duongDanFile) {
@@ -380,6 +477,119 @@ public class ChatActivity extends AppCompatActivity {
                 .show();
     }
 
+    private void resolveRoomDisplayNameFromServer() {
+        String url = BASE_URL + "chat/room-info"
+                + "?maPhongChat=" + roomId
+                + "&maTaiKhoan=" + maTaiKhoan;
+
+        StringRequest req = new StringRequest(Request.Method.GET, url,
+                response -> {
+                    try {
+                        JSONObject obj = new JSONObject(response.trim());
+                        if (!"success".equalsIgnoreCase(obj.optString("status"))) {
+                            return;
+                        }
+
+                        JSONObject room = obj.optJSONObject("room");
+                        JSONArray members = obj.optJSONArray("members");
+
+                        boolean isGroup = isGroupRoom(room, members);
+                        isGroupChat = isGroup;
+                        hasResolvedRoomType = true;
+                        String resolvedName;
+                        if (isGroup) {
+                            resolvedName = firstNonEmpty(
+                                    room != null ? room.optString("tenPhongChat", "") : "",
+                                    roomName,
+                                    "Nhóm chat"
+                            );
+                        } else {
+                            resolvedName = resolveOneToOneName(members);
+                            if (resolvedName == null || resolvedName.trim().isEmpty()) {
+                                resolvedName = firstNonEmpty(
+                                        getIntent().getStringExtra("friendName"),
+                                        roomName,
+                                        "Đoạn chat"
+                                );
+                            }
+                        }
+
+                        roomName = resolvedName;
+                        txtNameChat.setText(resolvedName);
+                    } catch (Exception e) {
+                        Log.e("ROOM_NAME", "Không parse được room-info", e);
+                    }
+                },
+                error -> Log.e("ROOM_NAME", "Không tải được room-info: " + error)) {
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Authorization", "Bearer " + session.getToken());
+                return headers;
+            }
+
+            @Override
+            protected com.android.volley.Response<String> parseNetworkResponse(com.android.volley.NetworkResponse response) {
+                try {
+                    String parsed = new String(response.data, java.nio.charset.StandardCharsets.UTF_8);
+                    return com.android.volley.Response.success(parsed, com.android.volley.toolbox.HttpHeaderParser.parseCacheHeaders(response));
+                } catch (Exception e) {
+                    return com.android.volley.Response.error(new com.android.volley.ParseError(e));
+                }
+            }
+        };
+
+        Volley.newRequestQueue(this).add(req);
+    }
+
+    private boolean isGroupRoom(JSONObject room, JSONArray members) {
+        if (room != null) {
+            Object loaiPhongObj = room.opt("loaiPhong");
+            if (loaiPhongObj instanceof Boolean) {
+                return (Boolean) loaiPhongObj;
+            }
+            if (loaiPhongObj instanceof Number) {
+                return ((Number) loaiPhongObj).intValue() != 0;
+            }
+            if (loaiPhongObj instanceof String) {
+                String raw = ((String) loaiPhongObj).trim().toLowerCase(Locale.ROOT);
+                if ("1".equals(raw) || "true".equals(raw)) {
+                    return true;
+                }
+            }
+        }
+
+        return members != null && members.length() > 2;
+    }
+
+    private String resolveOneToOneName(JSONArray members) {
+        if (members == null) return "";
+
+        for (int i = 0; i < members.length(); i++) {
+            JSONObject member = members.optJSONObject(i);
+            if (member == null) continue;
+
+            int memberId = member.optInt("maTaiKhoan", member.optInt("id", -1));
+            if (memberId != -1 && memberId != maTaiKhoan) {
+                return member.optString("tenNguoiDung", "").trim();
+            }
+        }
+
+        return "";
+    }
+
+    private String firstNonEmpty(String... values) {
+        for (String value : values) {
+            if (value != null) {
+                String trimmed = value.trim();
+                if (!trimmed.isEmpty()) {
+                    return trimmed;
+                }
+            }
+        }
+        return "";
+    }
+
     /**
      * ✅ Tải lịch sử tin nhắn của phòng
      */
@@ -400,9 +610,11 @@ public class ChatActivity extends AppCompatActivity {
                         if ("success".equals(obj.optString("status"))) {
                             JSONArray arr = obj.optJSONArray("messages");
                             List<Message> tmp = new ArrayList<>();
+                            boolean hasUnreadIncoming = false;
                             for (int i = 0; i < arr.length(); i++) {
                                 JSONObject item = arr.getJSONObject(i);
                                 String noiDung = item.optString("noiDung", "");
+                                int maTinNhan = item.optInt("maTinNhan", -1);
                                 int maGui = item.optInt("maTaiKhoanGui", -1);
                                 boolean isMine = (maGui == maTaiKhoan);
                                 String loaiTinNhan = item.optString("loaiTinNhan", "text");
@@ -415,17 +627,26 @@ public class ChatActivity extends AppCompatActivity {
                                     avatar = null;
                                 }
                                 String tenNguoiGui = item.optString("tenNguoiGui", "");
+                                String thoiGianGui = item.optString("thoiGianGui", "");
+                                String trangThaiTinNhan = item.optString("messageStatus", "sent");
+
+                                if (!isMine && !"read".equalsIgnoreCase(trangThaiTinNhan)) {
+                                    hasUnreadIncoming = true;
+                                }
 
                                 String moderationRaw = item.optString("trangThaiKiemDuyet", "");
                                 MessageModerationStatus moderation = MessageModerationStatus.from(moderationRaw);
 
-                                tmp.add(new Message(noiDung, isMine, maGui, loaiTinNhan, fileUrl, avatar, tenNguoiGui, moderation));
+                                Integer msgId = maTinNhan > 0 ? maTinNhan : null;
+                                tmp.add(new Message(msgId, noiDung, isMine, maGui, null, loaiTinNhan, fileUrl, thoiGianGui, trangThaiTinNhan, avatar, tenNguoiGui, moderation));
                             }
                             adapter.setMessages(tmp);
                             recyclerMessages.scrollToPosition(adapter.getItemCount() - 1);
 
-                            // đánh dấu đã đọc khi đã vào phòng và tải xong
-                            markAsReadImmediately(roomId);
+                            // Chỉ mark-read khi thật sự còn tin đến chưa đọc để tránh vòng lặp websocket.
+                            if (hasUnreadIncoming) {
+                                markAsReadImmediately(roomId);
+                            }
 
                             // QUAN TRỌNG: Lưu danh sách chuẩn từ Server vào SQLite
                             dbHelper.saveMessages(roomId, tmp);
@@ -465,7 +686,17 @@ public class ChatActivity extends AppCompatActivity {
         return text -> {
             try {
                 JSONObject obj = new JSONObject(text.trim());
-                if (!"chat_message".equals(obj.optString("type"))) return;
+                String type = obj.optString("type");
+
+                if ("message_status_update".equals(type)) {
+                    int updatedRoom = obj.optInt("maPhongChat", -1);
+                    if (updatedRoom == roomId) {
+                        loadMessages();
+                    }
+                    return;
+                }
+
+                if (!"chat_message".equals(type)) return;
 
                 int maPhongChat = obj.optInt("maPhongChat", -1);
                 if (maPhongChat != roomId) return;
@@ -489,14 +720,15 @@ public class ChatActivity extends AppCompatActivity {
                     avatar = null;
                 }
                 String tenNguoiGui = obj.optString("tenNguoiGui", "");
+                String thoiGianGui = obj.optString("thoiGianGui", "");
 
                 Log.d("WS_NEW_MSG", "💬 Tin nhắn realtime: " + noiDung + " | Từ: " + maGui);
 
-                adapter.addMessage(new Message(noiDung, isMine, maGui, loaiTinNhan, fileUrl, avatar, tenNguoiGui));
+                adapter.addMessage(new Message(null, noiDung, isMine, maGui, maTaiKhoan, loaiTinNhan, fileUrl, thoiGianGui, "sent", avatar, tenNguoiGui, MessageModerationStatus.CLEAN));
                 recyclerMessages.scrollToPosition(adapter.getItemCount() - 1);
 
                 // LƯU TIN NHẮN ĐẾN VÀO SQLITE
-                dbHelper.addMessage(roomId, maGui, noiDung, loaiTinNhan, fileUrl, null);
+                dbHelper.addMessage(roomId, null, maGui, maTaiKhoan, noiDung, loaiTinNhan, fileUrl, thoiGianGui, "sent", null);
 
                 // Đang mở phòng này → đánh dấu đã đọc ngay để reset unread
                 markAsReadImmediately(roomId);

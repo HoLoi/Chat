@@ -43,6 +43,9 @@ public class PhongChat {
     @Column(name = "ngayTao")
     private LocalDateTime ngayTao = LocalDateTime.now();
 
+    @Column(name = "trangThaiPhong")
+    private String trangThaiPhong = "active";
+
     @Column(name = "maTaiKhoanTao")
     private Integer maTaiKhoanTao;
 
@@ -102,6 +105,14 @@ public class PhongChat {
 
     public void setNgayTao(LocalDateTime ngayTao) {
         this.ngayTao = ngayTao;
+    }
+
+    public String getTrangThaiPhong() {
+        return trangThaiPhong;
+    }
+
+    public void setTrangThaiPhong(String trangThaiPhong) {
+        this.trangThaiPhong = trangThaiPhong;
     }
 
     public Integer getMaTaiKhoanTao() {

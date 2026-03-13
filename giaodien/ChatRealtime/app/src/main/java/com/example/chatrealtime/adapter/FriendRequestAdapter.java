@@ -57,8 +57,8 @@ public class FriendRequestAdapter extends ArrayAdapter<FriendRequest> {
         tvName.setText(req.getTenNguoiGui());
 
         String avatar = req.getAvatarUrl();
-        if (avatar != null && !avatar.isEmpty()) {
-            String full = avatar.startsWith("http") ? avatar : Constants.IMAGE_BASE_URL + avatar;
+        String full = normalizeImageUrl(avatar);
+        if (!full.isEmpty()) {
             Glide.with(context)
                     .load(full)
                     .placeholder(R.drawable.avatar_default)
@@ -124,5 +124,16 @@ public class FriendRequestAdapter extends ArrayAdapter<FriendRequest> {
         };
 
         Volley.newRequestQueue(context).add(request);
+    }
+
+    private String normalizeImageUrl(String raw) {
+        if (raw == null) return "";
+        String trimmed = raw.trim();
+        if (trimmed.isEmpty() || "null".equalsIgnoreCase(trimmed) || "/null".equalsIgnoreCase(trimmed)) {
+            return "";
+        }
+        if (trimmed.startsWith("http")) return trimmed;
+        if (trimmed.startsWith("/")) return Constants.IMAGE_BASE_URL + trimmed;
+        return Constants.IMAGE_BASE_URL + "/" + trimmed;
     }
 }

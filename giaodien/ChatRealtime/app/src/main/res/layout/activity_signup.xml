@@ -85,7 +85,8 @@
 
             <com.google.android.material.textfield.TextInputEditText
                 style="@style/textInputEditText_singup"
-                android:id="@+id/textInputEditTextMatkhau"/>
+                android:id="@+id/textInputEditTextMatkhau"
+                android:inputType="textPassword"/>
 
         </com.google.android.material.textfield.TextInputLayout>
 

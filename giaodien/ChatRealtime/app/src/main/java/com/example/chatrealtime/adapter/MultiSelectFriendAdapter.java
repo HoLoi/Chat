@@ -74,9 +74,8 @@ public class MultiSelectFriendAdapter extends BaseAdapter {
         holder.cbSelect.setOnCheckedChangeListener(null);
         holder.cbSelect.setChecked(f.selected);
 
-        String avatarPath = f.avatar != null ? f.avatar : "";
-        if (!avatarPath.isEmpty()) {
-            String full = avatarPath.startsWith("http") ? avatarPath : Constants.IMAGE_BASE_URL + avatarPath;
+        String full = normalizeImageUrl(f.avatar);
+        if (!full.isEmpty()) {
             Glide.with(context).load(full).placeholder(R.drawable.avatar_default).error(R.drawable.avatar_default).into(holder.ivAvatar);
         } else {
             holder.ivAvatar.setImageResource(R.drawable.avatar_default);
@@ -103,5 +102,16 @@ public class MultiSelectFriendAdapter extends BaseAdapter {
         ShapeableImageView ivAvatar;
         TextView tvName;
         CheckBox cbSelect;
+    }
+
+    private String normalizeImageUrl(String raw) {
+        if (raw == null) return "";
+        String trimmed = raw.trim();
+        if (trimmed.isEmpty() || "null".equalsIgnoreCase(trimmed) || "/null".equalsIgnoreCase(trimmed)) {
+            return "";
+        }
+        if (trimmed.startsWith("http")) return trimmed;
+        if (trimmed.startsWith("/")) return Constants.IMAGE_BASE_URL + trimmed;
+        return Constants.IMAGE_BASE_URL + "/" + trimmed;
     }
 }

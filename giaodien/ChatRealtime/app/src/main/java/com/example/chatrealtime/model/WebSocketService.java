@@ -136,6 +136,11 @@ public class WebSocketService extends WebSocketListener {
                     messageLiveData.postValue(text);
                     break;
 
+                case "message_status_update":
+                    Log.d(TAG, "📬 Message status update: " + json);
+                    messageLiveData.postValue(text);
+                    break;
+
                 case "friend_request":
                 case "friend_cancel":
 //                    Log.d(TAG, "👥 Friend request update: " + json);

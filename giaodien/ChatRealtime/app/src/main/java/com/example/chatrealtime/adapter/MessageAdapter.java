@@ -35,11 +35,15 @@ import java.util.Locale;
 
 public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageViewHolder> {
     private List<Message> messageList = new ArrayList<>();
-    private Context context;
+    private final Context context;
+    private final int currentUserId;
+    private int lastMyMessagePosition = -1;
 
-    public MessageAdapter(Context context, List<Message> initialList) {
+    public MessageAdapter(Context context, List<Message> initialList, int currentUserId) {
         this.context = context;
+        this.currentUserId = currentUserId;
         if (initialList != null) this.messageList = initialList;
+        recalculateLastMyMessagePosition();
     }
 
     @Override
@@ -65,6 +69,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
         Message msg = messageList.get(position);
         String type = msg.getLoaiTinNhan() != null ? msg.getLoaiTinNhan() : "text";
         String fileUrl = msg.getDuongDanFile();
+        String mediaUrl = normalizeMediaUrl(fileUrl);
         boolean isMine = msg.isMine();
         MessageModerationStatus moderationStatus = msg.getModerationStatus() != null ? msg.getModerationStatus() : MessageModerationStatus.CLEAN;
 
@@ -78,35 +83,53 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
         bindAvatar(holder, msg);
 
-        if (type.startsWith("image") && fileUrl != null && !fileUrl.isEmpty()) {
+        if (type.startsWith("image") && !mediaUrl.isEmpty()) {
             holder.mediaContainer.setVisibility(View.VISIBLE);
             holder.txtMessage.setVisibility(displayText.isEmpty() ? View.GONE : View.VISIBLE);
 
-            String fullUrl = fileUrl.startsWith("http") ? fileUrl : (Constants.IMAGE_BASE_URL + fileUrl);
             Glide.with(context)
-                    .load(fullUrl)
+                    .load(mediaUrl)
                     .placeholder(R.drawable.ic_launcher_foreground)
                     .centerCrop()
                     .into(holder.imgMedia);
             if (displayText == null || displayText.isEmpty()) {
                 displayText = "";
             }
-            setupMediaClicks(holder, fullUrl, "image/*");
-        } else if (type.startsWith("video") && fileUrl != null && !fileUrl.isEmpty()) {
+            setupMediaClicks(holder, mediaUrl, "image/*");
+        } else if (type.startsWith("video") && !mediaUrl.isEmpty()) {
             holder.mediaContainer.setVisibility(View.VISIBLE);
             holder.txtMessage.setVisibility(displayText.isEmpty() ? View.GONE : View.VISIBLE);
 
-            String fullUrl = fileUrl.startsWith("http") ? fileUrl : (Constants.IMAGE_BASE_URL + fileUrl);
             Glide.with(context)
-                    .load(fullUrl)
+                    .load(mediaUrl)
                     .thumbnail(0.2f)
                     .placeholder(R.drawable.ic_launcher_foreground)
                     .centerCrop()
                     .into(holder.imgMedia);
-            setupMediaClicks(holder, fullUrl, "video/*");
+            setupMediaClicks(holder, mediaUrl, "video/*");
         }
 
         holder.txtMessage.setText(displayText);
+
+        boolean showTimestamp = isLastInSenderGroup(position);
+        if (showTimestamp) {
+            holder.txtTimestamp.setVisibility(View.VISIBLE);
+            holder.txtTimestamp.setText(formatTime(msg.getThoiGianGui()));
+        } else {
+            holder.txtTimestamp.setVisibility(View.GONE);
+            holder.txtTimestamp.setText("");
+        }
+
+        if (holder.txtStatus != null) {
+            boolean showStatus = msg.isMine() && position == lastMyMessagePosition;
+            if (showStatus) {
+                holder.txtStatus.setVisibility(View.VISIBLE);
+                holder.txtStatus.setText(mapStatusLabel(msg.getTrangThaiTinNhan()));
+            } else {
+                holder.txtStatus.setVisibility(View.GONE);
+                holder.txtStatus.setText("");
+            }
+        }
     }
 
     @Override
@@ -117,12 +140,17 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
     public void addMessage(Message msg) {
         messageList.add(msg);
         notifyItemInserted(messageList.size() - 1);
+        recalculateLastMyMessagePosition();
+        if (messageList.size() >= 2) {
+            notifyItemChanged(messageList.size() - 2);
+        }
     }
 
     public void addMessages(List<Message> msgs) {
         int start = messageList.size();
         messageList.addAll(msgs);
         notifyItemRangeInserted(start, msgs.size());
+        recalculateLastMyMessagePosition();
     }
 
     public void setMessages(List<Message> msgs) {
@@ -130,6 +158,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
         if (msgs != null) {
             messageList.addAll(msgs);
         }
+        recalculateLastMyMessagePosition();
         notifyDataSetChanged();
     }
 
@@ -138,13 +167,87 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
         ImageView imgMedia;
         FrameLayout mediaContainer;
         TextView avatarView;
+        TextView txtTimestamp;
+        TextView txtStatus;
         public MessageViewHolder(@NonNull View itemView) {
             super(itemView);
             txtMessage = itemView.findViewById(R.id.txtMessage);
             imgMedia = itemView.findViewById(R.id.imgMedia);
             mediaContainer = itemView.findViewById(R.id.mediaContainer);
             avatarView = itemView.findViewById(R.id.avatarView);
+            txtTimestamp = itemView.findViewById(R.id.txtTimestamp);
+            txtStatus = itemView.findViewById(R.id.txtStatus);
         }
+    }
+
+    private boolean isLastInSenderGroup(int position) {
+        if (position < 0 || position >= messageList.size()) {
+            return false;
+        }
+        if (position == messageList.size() - 1) {
+            return true;
+        }
+        Message current = messageList.get(position);
+        Message next = messageList.get(position + 1);
+        return current.getMaNguoiGui() != next.getMaNguoiGui();
+    }
+
+    private void recalculateLastMyMessagePosition() {
+        lastMyMessagePosition = -1;
+        for (int i = messageList.size() - 1; i >= 0; i--) {
+            Message message = messageList.get(i);
+            if (message.isMine() || message.getMaNguoiGui() == currentUserId) {
+                lastMyMessagePosition = i;
+                break;
+            }
+        }
+    }
+
+    private String formatTime(String rawTime) {
+        if (rawTime == null || rawTime.trim().isEmpty()) {
+            return "";
+        }
+        String value = rawTime.trim();
+        try {
+            // yyyy-MM-ddTHH:mm:ss -> dd/MM HH:mm
+            if (value.contains("T") && value.length() >= 16) {
+                String day = value.substring(8, 10);
+                String month = value.substring(5, 7);
+                String hourMin = value.substring(11, 16);
+                return day + "/" + month + " " + hourMin;
+            }
+
+            // yyyy-MM-dd HH:mm:ss -> dd/MM HH:mm
+            if (value.length() >= 16 && value.charAt(4) == '-' && value.charAt(7) == '-') {
+                String day = value.substring(8, 10);
+                String month = value.substring(5, 7);
+                String hourMin = value.substring(11, 16);
+                return day + "/" + month + " " + hourMin;
+            }
+
+            // dd/MM HH:mm -> giữ nguyên
+            if (value.length() >= 11 && value.charAt(2) == '/' && value.charAt(5) == ' ') {
+                return value;
+            }
+
+            // HH:mm -> thêm ngày/tháng hiện tại
+            if (value.length() == 5 && value.charAt(2) == ':') {
+                java.text.SimpleDateFormat dayMonthFmt = new java.text.SimpleDateFormat("dd/MM", Locale.getDefault());
+                String dayMonth = dayMonthFmt.format(new java.util.Date());
+                return dayMonth + " " + value;
+            }
+        } catch (Exception ignored) {
+            // fallback below
+        }
+        return value;
+    }
+
+    private String mapStatusLabel(String status) {
+        String normalized = status != null ? status.trim().toLowerCase(Locale.ROOT) : "sent";
+        if ("read".equals(normalized) || "seen".equals(normalized)) {
+            return "Đã xem";
+        }
+        return "Đã gửi";
     }
 
     private void bindAvatar(MessageViewHolder holder, Message msg) {
@@ -162,11 +265,11 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
         Drawable placeholder = ContextCompat.getDrawable(context, R.drawable.avatar_circle);
         final String initials = fallbackText;
 
-        if (avatarUrl != null && !avatarUrl.isEmpty() && !"null".equalsIgnoreCase(avatarUrl)) {
-            String full = avatarUrl.startsWith("http") ? avatarUrl : (Constants.IMAGE_BASE_URL + avatarUrl);
+        String fullAvatar = normalizeMediaUrl(avatarUrl);
+        if (!fullAvatar.isEmpty()) {
             Glide.with(context)
                     .asDrawable()
-                    .load(full)
+                .load(fullAvatar)
                     .circleCrop()
                     .placeholder(placeholder)
                     .into(new CustomTarget<Drawable>() {
@@ -192,6 +295,17 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
             holder.avatarView.setText(initials);
             holder.avatarView.setText(fallbackText);
         }
+    }
+
+    private String normalizeMediaUrl(String raw) {
+        if (raw == null) return "";
+        String trimmed = raw.trim();
+        if (trimmed.isEmpty() || "null".equalsIgnoreCase(trimmed) || "/null".equalsIgnoreCase(trimmed)) {
+            return "";
+        }
+        if (trimmed.startsWith("http")) return trimmed;
+        if (trimmed.startsWith("/")) return Constants.IMAGE_BASE_URL + trimmed;
+        return Constants.IMAGE_BASE_URL + "/" + trimmed;
     }
 
     private void setupMediaClicks(MessageViewHolder holder, String fullUrl, String mimeHint) {

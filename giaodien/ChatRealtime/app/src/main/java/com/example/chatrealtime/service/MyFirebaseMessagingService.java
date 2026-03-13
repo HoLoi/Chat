@@ -73,7 +73,8 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 return; // Đang mở app thì không hiện thông báo
             }
 
-            showPlainNotification(chatId, roomIdInt, senderName, roomName, text);
+            boolean isGroup = parseGroupFlag(message);
+            showPlainNotification(chatId, roomIdInt, senderName, roomName, text, isGroup);
         } catch (Exception e) {
             // tránh sập app khi đang foreground
             Log.e("FCM_MSG", "onMessageReceived error", e);
@@ -95,7 +96,22 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         }
     }
 
-    private void showPlainNotification(String chatId, int roomId, String senderName, String roomName, String text) {
+    private boolean parseGroupFlag(RemoteMessage message) {
+        String raw = firstNonEmpty(
+            message.getData().get("isGroup"),
+            message.getData().get("loaiPhong"),
+            message.getData().get("is_group")
+        );
+
+        if (raw == null) return false;
+        String normalized = raw.trim().toLowerCase();
+        return "1".equals(normalized)
+                || "true".equals(normalized)
+                || "yes".equals(normalized)
+                || "group".equals(normalized);
+    }
+
+    private void showPlainNotification(String chatId, int roomId, String senderName, String roomName, String text, boolean isGroup) {
         String channelId = "CHAT_CHANNEL";
         NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
@@ -116,6 +132,8 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         intent.putExtra("maPhong", roomId);
         intent.putExtra("maPhongChat", roomId);
         intent.putExtra("roomName", roomName);
+        intent.putExtra("friendName", senderName);
+        intent.putExtra("isGroup", isGroup);
         intent.setAction("OPEN_CHAT_" + chatId + System.currentTimeMillis()); // unique để PendingIntent không reuse sai
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
 

@@ -119,7 +119,7 @@ public class ProfileFragment extends Fragment {
 
                 StringRequest request = new StringRequest(
                         Request.Method.POST,
-                        Constants.BASE_URL + "user/update-status",
+                        Constants.BASE_URL + "user/logout",
                         response -> {
                             try {
                                 JSONObject json = new JSONObject(response);
@@ -143,8 +143,7 @@ public class ProfileFragment extends Fragment {
                     @Override
                     protected Map<String, String> getParams() {
                         Map<String, String> params = new HashMap<>();
-                        params.put("email", email);
-                        params.put("status", "offline");
+                        params.put("maTaiKhoan", String.valueOf(maTaiKhoan));
                         return params;
                     }
                 };
@@ -231,13 +230,12 @@ public class ProfileFragment extends Fragment {
 
                         // ===== AVATAR =====
                         String avatarPath = data.optString("anhDaiDien_URL", "");
+                        String avatarUrl = normalizeImageUrl(avatarPath);
 
-                        if (avatarPath.isEmpty()) {
+                        if (avatarUrl.isEmpty()) {
                             avatarImage.setImageResource(R.drawable.avatar_default);
                             return;
                         }
-
-                        String avatarUrl = Constants.IMAGE_BASE_URL + avatarPath;
 
                         Glide.with(requireContext())
                                 .load(avatarUrl)
@@ -258,6 +256,17 @@ public class ProfileFragment extends Fragment {
         );
 
         Volley.newRequestQueue(requireContext()).add(request);
+    }
+
+    private String normalizeImageUrl(String raw) {
+        if (raw == null) return "";
+        String trimmed = raw.trim();
+        if (trimmed.isEmpty() || "null".equalsIgnoreCase(trimmed) || "/null".equalsIgnoreCase(trimmed)) {
+            return "";
+        }
+        if (trimmed.startsWith("http")) return trimmed;
+        if (trimmed.startsWith("/")) return Constants.IMAGE_BASE_URL + trimmed;
+        return Constants.IMAGE_BASE_URL + "/" + trimmed;
     }
 
 }

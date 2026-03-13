@@ -42,6 +42,9 @@
             android:name=".activity.NavigationBar.ChildActivity.MenuChatActivity"
             android:exported="false" />
         <activity
+            android:name=".activity.NavigationBar.ChildActivity.MenuChatNhomActivity"
+            android:exported="false" />
+        <activity
             android:name=".activity.NavigationBar.ChildActivity.VerifyPasswordChangeActivity"
             android:exported="false" />
         <activity

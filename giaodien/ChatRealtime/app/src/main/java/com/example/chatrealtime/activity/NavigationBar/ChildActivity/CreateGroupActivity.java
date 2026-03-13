@@ -61,7 +61,7 @@ public class CreateGroupActivity extends AppCompatActivity {
         lvFriends.setAdapter(adapter);
 
         switchPrivacy.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            tvPrivacy.setText(isChecked ? "Private" : "Public");
+            tvPrivacy.setText(isChecked ? "Riêng tư" : "Công khai");
         });
 
         btnBack.setOnClickListener(v -> finish());

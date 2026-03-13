@@ -1,20 +1,25 @@
 package com.example.chatrealtime.controller;
 
-import com.example.chatrealtime.entity.NguoiDung;
-import com.example.chatrealtime.entity.TaiKhoan;
-import com.example.chatrealtime.repository.NguoiDungRepository;
-import com.example.chatrealtime.repository.TaiKhoanRepository;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.File;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.example.chatrealtime.entity.NguoiDung;
+import com.example.chatrealtime.entity.TaiKhoan;
+import com.example.chatrealtime.repository.NguoiDungRepository;
+import com.example.chatrealtime.repository.TaiKhoanRepository;
 
 @RestController
 @RequestMapping("/api/user")
@@ -146,6 +151,30 @@ public class UserController {
 
         res.put("status", "success");
         res.put("message", "Cập nhật trạng thái thành công");
+        return res;
+    }
+
+    // =========================
+    // LOGOUT: OFFLINE + XOA TOKEN FCM
+    // =========================
+    @PostMapping("/logout")
+    public Map<String, Object> logout(@RequestParam Integer maTaiKhoan) {
+        Map<String, Object> res = new HashMap<>();
+
+        Optional<TaiKhoan> opt = taiKhoanRepo.findById(maTaiKhoan);
+        if (opt.isEmpty()) {
+            res.put("status", "error");
+            res.put("message", "Không tìm thấy tài khoản");
+            return res;
+        }
+
+        TaiKhoan tk = opt.get();
+        tk.setTrangThai("offline");
+        tk.setToken(null);
+        taiKhoanRepo.save(tk);
+
+        res.put("status", "success");
+        res.put("message", "Đăng xuất thành công");
         return res;
     }
 

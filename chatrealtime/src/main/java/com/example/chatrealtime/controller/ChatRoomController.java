@@ -123,15 +123,24 @@ public class ChatRoomController {
                     .body(Map.of("status", "error", "message", "Không tìm thấy phòng"));
         }
 
+        boolean isDeletedGroup = room.getLoaiPhong() != null
+                && room.getLoaiPhong() == 1
+                && "deleted".equalsIgnoreCase(room.getTrangThaiPhong());
+        if (isDeletedGroup) {
+            return ResponseEntity.status(410)
+                    .body(Map.of("status", "error", "message", "Nhóm đã bị giải tán"));
+        }
+
         // Bỏ ràng buộc ngayXoa cho phòng 1-1 để vẫn lấy avatar người đối diện
         boolean isOneToOne = room.getLoaiPhong() != null && room.getLoaiPhong() == 0;
-        boolean isMember = isOneToOne
-                ? thanhVienPhongRepo.existsByIdMaPhongChatAndIdMaTaiKhoan(maPhongChat, maTaiKhoan)
-                : thanhVienPhongRepo.existsByIdMaPhongChatAndIdMaTaiKhoanAndNgayXoaIsNull(maPhongChat, maTaiKhoan);
-        if (!isMember) {
+        boolean hasMembership = thanhVienPhongRepo.existsByIdMaPhongChatAndIdMaTaiKhoan(maPhongChat, maTaiKhoan);
+        if (!hasMembership) {
             return ResponseEntity.status(403)
                     .body(Map.of("status", "error", "message", "Bạn không ở trong phòng"));
         }
+
+                // Không tự khôi phục ngayXoa ở đây để giữ mốc lọc tin nhắn theo từng thành viên
+                // (đặc biệt cho phòng nhóm). Logic 1-1 giữ nguyên ở phần members bên dưới.
 
         Map<String, Object> roomMap = new java.util.HashMap<>();
         roomMap.put("maPhongChat", room.getMaPhongChat());
@@ -152,7 +161,7 @@ public class ChatRoomController {
         return ResponseEntity.ok(res);
     }
 
-        // ================== XÓA PHÒNG / GIẢI TÁN NHÓM ==================
+                // ================== XÓA PHÒNG (XÓA PHÍA NGƯỜI DÙNG) ==================
     @PostMapping("/delete-room")
         @Transactional
     public ResponseEntity<?> deleteRoom(
@@ -170,19 +179,11 @@ public class ChatRoomController {
                                         .body(Map.of("status", "error", "message", "Không tìm thấy phòng"));
                 }
 
-                Integer loaiPhong = room.getLoaiPhong();
-                boolean isGroup = loaiPhong != null && loaiPhong == 1;
-
-                if (isGroup) {
-                        Integer leader = room.getMaTruongNhom() != null ? room.getMaTruongNhom() : room.getMaTaiKhoanTao();
-                        if (!Objects.equals(leader, maTaiKhoan)) {
-                                return ResponseEntity.status(403)
-                                                .body(Map.of("status", "error", "message", "Chỉ trưởng nhóm mới được giải tán nhóm"));
-                        }
-
-                        phongChatRepo.delete(room);
-                        return ResponseEntity.ok(Map.of("status", "success", "message", "Đã giải tán nhóm"));
-                }
+        boolean hasMembership = thanhVienPhongRepo.existsByIdMaPhongChatAndIdMaTaiKhoan(maPhongChat, maTaiKhoan);
+        if (!hasMembership) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("status", "error", "message", "Bạn không ở trong phòng"));
+        }
 
         int updated = thanhVienPhongRepo.updateNgayXoa(maPhongChat, maTaiKhoan);
 
@@ -195,6 +196,49 @@ public class ChatRoomController {
         return ResponseEntity.status(500)
                 .body(Map.of("status", "error", "message", "Không thể xóa"));
     }
+
+        // ================== GIẢI TÁN NHÓM (TRƯỞNG NHÓM) ==================
+        @PostMapping("/dissolve-group")
+        @Transactional
+        public ResponseEntity<?> dissolveGroup(
+                        @RequestParam Integer maPhongChat,
+                        @RequestParam Integer maTaiKhoan
+        ) {
+                if (maPhongChat == null || maTaiKhoan == null) {
+                        return ResponseEntity.badRequest()
+                                        .body(Map.of("status", "error", "message", "Thiếu dữ liệu"));
+                }
+
+                PhongChat room = phongChatRepo.findById(maPhongChat).orElse(null);
+                if (room == null) {
+                        return ResponseEntity.badRequest()
+                                        .body(Map.of("status", "error", "message", "Không tìm thấy phòng"));
+                }
+
+                boolean isGroupRoom = room.getLoaiPhong() != null && room.getLoaiPhong() == 1;
+                if (!isGroupRoom) {
+                        return ResponseEntity.badRequest()
+                                        .body(Map.of("status", "error", "message", "Phòng này không phải chat nhóm"));
+                }
+
+                boolean hasMembership = thanhVienPhongRepo.existsByIdMaPhongChatAndIdMaTaiKhoan(maPhongChat, maTaiKhoan);
+                if (!hasMembership) {
+                        return ResponseEntity.status(403)
+                                        .body(Map.of("status", "error", "message", "Bạn không ở trong phòng"));
+                }
+
+                Integer leader = room.getMaTruongNhom() != null ? room.getMaTruongNhom() : room.getMaTaiKhoanTao();
+                if (!Objects.equals(leader, maTaiKhoan)) {
+                        return ResponseEntity.status(403)
+                                        .body(Map.of("status", "error", "message", "Chỉ trưởng nhóm mới có thể giải tán"));
+                }
+
+                thanhVienPhongRepo.updateNgayXoaForAllMembers(maPhongChat);
+                room.setTrangThaiPhong("deleted");
+                phongChatRepo.save(room);
+
+                return ResponseEntity.ok(Map.of("status", "success", "message", "Đã giải tán nhóm"));
+        }
 
     // ================== CẬP NHẬT PHÒNG (đổi tên / kiểu nhóm) ==================
     @PostMapping("/update-room")
@@ -455,6 +499,19 @@ public class ChatRoomController {
     // ================== LẤY DANH SÁCH THÀNH VIÊN ==================
     @GetMapping("/room-members")
     public ResponseEntity<?> getMembers(@RequestParam Integer maPhongChat) {
+        PhongChat room = phongChatRepo.findById(maPhongChat).orElse(null);
+        if (room == null) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("status", "error", "message", "Không tìm thấy phòng"));
+        }
+
+        if (room.getLoaiPhong() != null
+                && room.getLoaiPhong() == 1
+                && "deleted".equalsIgnoreCase(room.getTrangThaiPhong())) {
+            return ResponseEntity.status(410)
+                    .body(Map.of("status", "error", "message", "Nhóm đã bị giải tán"));
+        }
+
         return ResponseEntity.ok(
                 Map.of(
                         "status", "success",

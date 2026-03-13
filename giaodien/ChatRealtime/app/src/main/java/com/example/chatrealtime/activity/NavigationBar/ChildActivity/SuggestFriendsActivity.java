@@ -1,7 +1,11 @@
 package com.example.chatrealtime.activity.NavigationBar.ChildActivity;
 
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
+import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -27,7 +31,10 @@ public class SuggestFriendsActivity extends AppCompatActivity {
 
     private ListView lvSuggest;
     private TextView tvEmpty;
-    private ArrayList<JSONObject> data = new ArrayList<>();
+    private EditText edtSearch;
+    private ImageButton btnSearch;
+    private final ArrayList<JSONObject> data = new ArrayList<>();
+    private final ArrayList<JSONObject> allSuggestions = new ArrayList<>();
     private SuggestFriendAdapter adapter;
     private int myId;
 
@@ -39,9 +46,19 @@ public class SuggestFriendsActivity extends AppCompatActivity {
 
         lvSuggest = findViewById(R.id.lvSuggest);
         tvEmpty = findViewById(R.id.tvEmpty);
+        edtSearch = findViewById(R.id.edtSearch);
+        btnSearch = findViewById(R.id.btnSearch);
         ImageView btnBack = findViewById(R.id.btnBack);
 
         btnBack.setOnClickListener(v -> finish());
+        btnSearch.setOnClickListener(v -> runSearch());
+        edtSearch.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                runSearch();
+                return true;
+            }
+            return false;
+        });
 
         myId = new SessionManager(this).getMaTaiKhoan();
         adapter = new SuggestFriendAdapter(this, data);
@@ -65,18 +82,17 @@ public class SuggestFriendsActivity extends AppCompatActivity {
                         }
 
                         JSONArray arr = response.optJSONArray("suggestions");
-                        data.clear();
+                        allSuggestions.clear();
                         if (arr != null) {
                             for (int i = 0; i < arr.length(); i++) {
                                 JSONObject obj = arr.getJSONObject(i);
-                                data.add(obj);
+                                allSuggestions.add(obj);
                                 // lấy trạng thái kết bạn từ backend cho từng gợi ý
-                                fetchStatus(i, obj.optInt("maTaiKhoan", -1));
+                                fetchStatus(obj, obj.optInt("maTaiKhoan", -1));
                             }
                         }
 
-                        adapter.notifyDataSetChanged();
-                        tvEmpty.setVisibility(data.isEmpty() ? View.VISIBLE : View.GONE);
+                        applySearch(edtSearch.getText().toString());
 
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -89,8 +105,8 @@ public class SuggestFriendsActivity extends AppCompatActivity {
     }
 
     // Gọi API trạng thái kết bạn để nút hiển thị đúng (chờ, đã là bạn, chưa kết bạn)
-    private void fetchStatus(int index, int friendId) {
-        if (friendId <= 0 || index >= data.size()) return;
+    private void fetchStatus(JSONObject targetUser, int friendId) {
+        if (friendId <= 0 || targetUser == null) return;
 
         String url = Constants.BASE_URL + "friends/status?myId=" + myId + "&friendId=" + friendId;
 
@@ -101,8 +117,7 @@ public class SuggestFriendsActivity extends AppCompatActivity {
                 resp -> {
                     try {
                         String status = resp.optString("status", "");
-                        JSONObject obj = data.get(index);
-                        obj.put("relationStatus", status);
+                        targetUser.put("relationStatus", status);
                         adapter.notifyDataSetChanged();
                     } catch (Exception ignored) {}
                 },
@@ -110,5 +125,50 @@ public class SuggestFriendsActivity extends AppCompatActivity {
         );
 
         Volley.newRequestQueue(this).add(req);
+    }
+
+    private void runSearch() {
+        applySearch(edtSearch.getText().toString());
+    }
+
+    private void applySearch(String keyword) {
+        String normalized = keyword == null ? "" : keyword.trim().toLowerCase();
+
+        data.clear();
+        if (TextUtils.isEmpty(normalized)) {
+            data.addAll(allSuggestions);
+            adapter.notifyDataSetChanged();
+            showEmptyState(data.isEmpty(), false);
+            return;
+        }
+
+        for (JSONObject user : allSuggestions) {
+            String displayName = user.optString("tenNguoiDung", "").toLowerCase();
+            String username = resolveUsername(user).toLowerCase();
+
+            if (displayName.contains(normalized) || username.contains(normalized)) {
+                data.add(user);
+            }
+        }
+
+        adapter.notifyDataSetChanged();
+        showEmptyState(data.isEmpty(), true);
+    }
+
+    private void showEmptyState(boolean isEmpty, boolean isSearching) {
+        if (isSearching) {
+            tvEmpty.setText("Không tìm thấy người dùng");
+        } else {
+            tvEmpty.setText("Không có gợi ý kết bạn");
+        }
+        tvEmpty.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
+    }
+
+    private String resolveUsername(JSONObject user) {
+        String username = user.optString("username", "");
+        if (username.isEmpty()) username = user.optString("tenDangNhap", "");
+        if (username.isEmpty()) username = user.optString("taiKhoan", "");
+        if (username.isEmpty()) username = user.optString("email", "");
+        return username;
     }
 }

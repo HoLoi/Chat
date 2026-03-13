@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.example.chatrealtime.service.MessageService;
 import com.example.chatrealtime.service.MessageService.SendMessageResult;
+import com.example.chatrealtime.websocket.ChatWebSocketHandler;
 
 @RestController
 @RequestMapping("/api/chat")
@@ -23,6 +24,9 @@ public class MessageController {
 
     @Autowired
     private MessageService messageService;
+
+        @Autowired
+        private ChatWebSocketHandler chatWebSocketHandler;
 
     // ===== SEND MESSAGE =====
     @PostMapping("/send-message")
@@ -63,6 +67,8 @@ public class MessageController {
             String messageText = "CLEAN".equals(result.status())
                     ? "Gửi tin nhắn thành công"
                     : "Tin nhắn có nội dung nhạy cảm";
+
+            chatWebSocketHandler.pushMessageStatusUpdate(maPhongChat);
 
             return ResponseEntity.ok(Map.of(
                     "status", result.status(),
@@ -152,6 +158,8 @@ public class MessageController {
                                                                 "score", result.decision().score()
                                                 ));
                         }
+
+                        chatWebSocketHandler.pushMessageStatusUpdate(maPhongChat);
 
                         return ResponseEntity.ok(
                                         Map.of(

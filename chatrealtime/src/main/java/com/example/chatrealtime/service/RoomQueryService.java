@@ -15,7 +15,7 @@ public class RoomQueryService {
     @PersistenceContext
     private EntityManager em;
 
-    public List<Map<String, Object>> getRooms(Integer maTaiKhoan) {
+    public List<Map<String, Object>> getRooms(Integer maTaiKhoan, boolean hideDeletedGroupsWithoutNewMessage) {
         String sql = """
         SELECT 
             p.maPhongChat AS id,
@@ -77,6 +77,7 @@ public class RoomQueryService {
         FROM PHONGCHAT p
         JOIN THANHVIEN_PHONG tp ON p.maPhongChat = tp.maPhongChat
             WHERE tp.maTaiKhoan = :uid
+              AND IFNULL(p.trangThaiPhong, 'active') <> 'deleted'
 
         HAVING (
             (
@@ -90,9 +91,23 @@ public class RoomQueryService {
             OR (lastTime IS NULL)
         )
         AND NOT (p.loaiPhong = 0 AND lastTime IS NULL)
-
-        ORDER BY COALESCE(lastTime, p.ngayTao) DESC
     """;
+
+        if (hideDeletedGroupsWithoutNewMessage) {
+            sql += """
+                AND NOT (
+                    p.loaiPhong = 1
+                    AND lastTime IS NULL
+                    AND (
+                        SELECT ngayXoa FROM THANHVIEN_PHONG
+                        WHERE maPhongChat = p.maPhongChat
+                          AND maTaiKhoan = :uid
+                    ) IS NOT NULL
+                )
+            """;
+        }
+
+        sql += " ORDER BY COALESCE(lastTime, p.ngayTao) DESC";
 
         List<Object[]> rows = em.createNativeQuery(sql)
                 .setParameter("uid", maTaiKhoan)
@@ -146,6 +161,7 @@ public class RoomQueryService {
             FROM PHONGCHAT p
                         JOIN THANHVIEN_PHONG tp ON p.maPhongChat = tp.maPhongChat
                         WHERE tp.maTaiKhoan = :uid
+                            AND IFNULL(p.trangThaiPhong, 'active') <> 'deleted'
               AND (
                     CASE WHEN p.loaiPhong = 0 THEN (
                         SELECT nd.tenNguoiDung

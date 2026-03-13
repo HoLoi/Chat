@@ -23,7 +23,6 @@ import com.example.chatrealtime.Constants;
 import com.example.chatrealtime.R;
 import com.example.chatrealtime.database.ChatDatabaseHelper;
 import com.example.chatrealtime.model.SessionManager;
-import com.example.chatrealtime.model.WebSocketService;
 import com.google.android.material.imageview.ShapeableImageView;
 
 import org.json.JSONArray;
@@ -111,11 +110,11 @@ public class PersionalPageActivity extends AppCompatActivity {
                         tvName.setText(obj.optString("tenNguoiDung", "Không có tên"));
 
                         String avatar = obj.optString("anhDaiDien_URL", "");
+                        String avatarUrl = normalizeImageUrl(avatar);
 
-                        if (!avatar.isEmpty()) {
-                            // ⚠️ avatar đang là path tương đối: /uploads/avatars/xxx.png
+                        if (!avatarUrl.isEmpty()) {
                             Glide.with(this)
-                                    .load(Constants.IMAGE_BASE_URL + avatar)
+                                    .load(avatarUrl)
                                     .error(R.drawable.avatar_default)
                                     .into(imgAvatar);
                         } else {
@@ -135,6 +134,17 @@ public class PersionalPageActivity extends AppCompatActivity {
         );
 
         Volley.newRequestQueue(this).add(request);
+    }
+
+    private String normalizeImageUrl(String raw) {
+        if (raw == null) return "";
+        String trimmed = raw.trim();
+        if (trimmed.isEmpty() || "null".equalsIgnoreCase(trimmed) || "/null".equalsIgnoreCase(trimmed)) {
+            return "";
+        }
+        if (trimmed.startsWith("http")) return trimmed;
+        if (trimmed.startsWith("/")) return Constants.IMAGE_BASE_URL + trimmed;
+        return Constants.IMAGE_BASE_URL + "/" + trimmed;
     }
 
 
@@ -245,12 +255,6 @@ public class PersionalPageActivity extends AppCompatActivity {
                         JSONObject resp = new JSONObject(response);
 
                         if ("success".equals(resp.getString("status"))) {
-
-                            if ("send_request".equals(action)) {
-                                sendFriendRequestRealtime(myId, friendId);
-                            } else {
-                                sendFriendCancelRealtime(myId, friendId);
-                            }
 
                             if ("unfriend".equals(action)) {
                                 new ChatDatabaseHelper(this).deleteFriend(friendId);
@@ -382,65 +386,5 @@ public class PersionalPageActivity extends AppCompatActivity {
         intent.putExtra("roomName", tvName.getText().toString());
         startActivity(intent);
     }
-
-    private void sendFriendRequestRealtime(int fromUserId, int toUserId) {
-        try {
-
-            // 🔥 Nếu WebSocket chưa kết nối thì kết nối trước
-            if (!WebSocketService.getInstance().isConnected()) {
-                Log.d("AddFriend", "⚠️ WebSocket chưa kết nối → đang kết nối lại...");
-                WebSocketService.getInstance().connect(Constants.WEBSOCKET_URL, fromUserId);
-
-                // ⏳ Delay nhẹ 200ms để server nhận kết nối rồi mới gửi
-                new android.os.Handler().postDelayed(() -> {
-                    try {
-                        JSONObject json = new JSONObject();
-                        json.put("type", "friend_request");
-                        json.put("fromUser", fromUserId);
-                        json.put("toUser", toUserId);
-                        json.put("message", "Bạn có lời mời kết bạn mới!");
-
-                        WebSocketService.getInstance().sendJson(json);
-
-                        Log.d("AddFriend", "📡 Gửi WebSocket friend_request (DELAY): " + json);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }, 200);
-
-                return;
-            }
-
-            // 🔥 Nếu đã kết nối thì gửi ngay
-            JSONObject json = new JSONObject();
-            json.put("type", "friend_request");
-            json.put("fromUser", fromUserId);
-            json.put("toUser", toUserId);
-            json.put("message", "Bạn có lời mời kết bạn mới!");
-
-            WebSocketService.getInstance().sendJson(json);
-
-            Log.d("AddFriend", "📡 Gửi WebSocket friend_request (OK): " + json);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void sendFriendCancelRealtime(int fromUserId, int toUserId) {
-        try {
-            JSONObject json = new JSONObject();
-            json.put("type", "friend_cancel"); // type khác với friend_request
-            json.put("fromUser", fromUserId);
-            json.put("toUser", toUserId);
-            json.put("message", "Người này đã hủy lời mời kết bạn!");
-
-            WebSocketService.getInstance().sendJson(json);
-            Log.d("CancelFriend", "📡 Gửi WebSocket friend_cancel: " + json);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
 
 }

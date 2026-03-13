@@ -78,11 +78,56 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
                 sendToUser(data.toUser, data);
                 break;
 
+            case "friend_cancel":
+                sendToUser(data.toUser, data);
+                break;
+
             case "friend_accepted":
                 sendToUser(data.toUser, data);
                 sendToUser(data.fromUser, data);
                 break;
         }
+    }
+
+    public void pushFriendEvent(String type, Integer fromUser, Integer toUser, String message) {
+        if (toUser == null || type == null || type.isBlank()) {
+            return;
+        }
+
+        SocketMessage data = new SocketMessage();
+        data.type = type;
+        data.fromUser = fromUser;
+        data.toUser = toUser;
+        data.message = message;
+
+        try {
+            sendToUser(toUser, data);
+        } catch (Exception ignored) {
+            // Không throw để tránh làm fail API khi realtime không khả dụng
+        }
+    }
+
+    public void pushMessageStatusUpdate(Integer roomId) {
+        if (roomId == null) {
+            return;
+        }
+
+        manager.users.forEach((uid, s) -> {
+            if (s != null && s.isOpen()) {
+                try {
+                    s.sendMessage(new TextMessage(
+                            mapper.writeValueAsString(
+                                    new Object() {
+                                        public final String type = "message_status_update";
+                                        public final Integer maPhongChat = roomId;
+                                    }
+                            )
+                    ));
+                } catch (Exception ignored) {
+                    // ignore a single failed socket push
+                }
+            }
+        });
     }
 
     private void send(WebSocketSession session, String msgType, String msg) throws Exception {
@@ -127,6 +172,9 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         manager.users.entrySet().removeIf(e -> e.getValue().equals(session));
-        manager.userRooms.entrySet().removeIf(e -> e.getKey().equals(session));
+        manager.userRooms.entrySet().removeIf(e -> {
+            WebSocketSession userSession = manager.users.get(e.getKey());
+            return userSession == null || userSession.equals(session);
+        });
     }
 }

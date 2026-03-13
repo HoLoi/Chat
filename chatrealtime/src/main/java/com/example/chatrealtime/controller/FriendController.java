@@ -12,17 +12,24 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.chatrealtime.repository.BanBeRepository;
 import com.example.chatrealtime.service.FriendService;
+import com.example.chatrealtime.websocket.ChatWebSocketHandler;
 
 @RestController
 @RequestMapping("/api/friends")
 public class FriendController {
     private final BanBeRepository banBeRepo;
     private final FriendService friendService;
+    private final ChatWebSocketHandler chatWebSocketHandler;
 
-    public FriendController(BanBeRepository banBeRepo, FriendService friendService) {
+    public FriendController(
+            BanBeRepository banBeRepo,
+            FriendService friendService,
+            ChatWebSocketHandler chatWebSocketHandler
+    ) {
 
         this.banBeRepo = banBeRepo;
         this.friendService = friendService;
+        this.chatWebSocketHandler = chatWebSocketHandler;
     }
 
     @GetMapping("/search")
@@ -90,6 +97,12 @@ public class FriendController {
     ) {
         try {
             friendService.sendRequest(myId, friendId);
+            chatWebSocketHandler.pushFriendEvent(
+                    "friend_request",
+                    myId,
+                    friendId,
+                    "Bạn có lời mời kết bạn mới!"
+            );
             return ResponseEntity.ok(Map.of("status", "success"));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest()
@@ -107,6 +120,12 @@ public class FriendController {
             @RequestParam Integer friendId
     ) {
         friendService.cancelRequest(myId, friendId);
+        chatWebSocketHandler.pushFriendEvent(
+            "friend_cancel",
+            myId,
+            friendId,
+            "Người này đã hủy lời mời kết bạn!"
+        );
         return ResponseEntity.ok(Map.of("status", "success"));
     }
 

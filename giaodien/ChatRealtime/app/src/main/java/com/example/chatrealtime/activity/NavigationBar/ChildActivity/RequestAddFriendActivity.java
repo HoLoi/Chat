@@ -1,7 +1,6 @@
 package com.example.chatrealtime.activity.NavigationBar.ChildActivity;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -24,12 +23,12 @@ import com.example.chatrealtime.model.FriendRequest;
 import com.example.chatrealtime.model.SessionManager;
 import com.example.chatrealtime.model.WebSocketService;
 
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class RequestAddFriendActivity extends AppCompatActivity {
 
@@ -132,6 +131,10 @@ public class RequestAddFriendActivity extends AppCompatActivity {
 //    }
 
     private void addRealtimeRequest(int fromUserId, String message) {
+        if (fromUserId <= 0 || containsRequestFromUser(fromUserId)) {
+            return;
+        }
+
         String url = Constants.BASE_URL + "user/by-id?maTaiKhoan=" + fromUserId;
 
         JsonObjectRequest request = new JsonObjectRequest(
@@ -146,10 +149,11 @@ public class RequestAddFriendActivity extends AppCompatActivity {
                         String avatar = obj.optString("anhDaiDien_URL", "");
                         String email = ""; // backend không trả email
 
-                        requestList.add(
-                                0,
-                                new FriendRequest(fromUserId, tenNguoiGui, email, avatar)
-                        );
+                        if (containsRequestFromUser(fromUserId)) {
+                            return;
+                        }
+
+                        requestList.add(0, new FriendRequest(fromUserId, tenNguoiGui, email, avatar));
                         adapter.notifyDataSetChanged();
                         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
 
@@ -205,12 +209,20 @@ public class RequestAddFriendActivity extends AppCompatActivity {
                 Request.Method.GET, url, null,
                 response -> {
                     requestList.clear();
+                    Set<Integer> senderIds = new HashSet<>();
+
                     for (int i = 0; i < response.length(); i++) {
                         JSONObject obj = response.optJSONObject(i);
                         if (obj == null) continue;
 
+                        int maNguoiGui = obj.optInt("maNguoiGui");
+                        if (maNguoiGui <= 0 || senderIds.contains(maNguoiGui)) {
+                            continue;
+                        }
+                        senderIds.add(maNguoiGui);
+
                         requestList.add(new FriendRequest(
-                                obj.optInt("maNguoiGui"),
+                                maNguoiGui,
                                 obj.optString("tenNguoiGui"),
                                 obj.optString("emailNguoiGui"),
                                 obj.optString("anhDaiDien_URL")
@@ -222,6 +234,15 @@ public class RequestAddFriendActivity extends AppCompatActivity {
         );
 
         Volley.newRequestQueue(this).add(request);
+    }
+
+    private boolean containsRequestFromUser(int fromUserId) {
+        for (FriendRequest req : requestList) {
+            if (req.getMaTaiKhoanGui() == fromUserId) {
+                return true;
+            }
+        }
+        return false;
     }
 
 

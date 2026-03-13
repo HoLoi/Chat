@@ -31,6 +31,15 @@ public interface ThanhVienPhongRepository
             @Param("maTaiKhoan") Integer maTaiKhoan
     );
 
+        @Modifying
+        @Transactional
+        @Query("""
+                UPDATE ThanhVienPhong tv
+                SET tv.ngayXoa = CURRENT_TIMESTAMP
+                WHERE tv.id.maPhongChat = :maPhongChat
+        """)
+        int updateNgayXoaForAllMembers(@Param("maPhongChat") Integer maPhongChat);
+
                 @Modifying
                 @Transactional
                 @Query("""
@@ -40,6 +49,34 @@ public interface ThanhVienPhongRepository
                                         AND tv.ngayXoa IS NOT NULL
                 """)
                 int restoreDeletedMembers(@Param("maPhongChat") Integer maPhongChat);
+
+                @Modifying
+                @Transactional
+                @Query("""
+                                UPDATE ThanhVienPhong tv
+                                SET tv.ngayXoa = NULL
+                                WHERE tv.id.maPhongChat = :maPhongChat
+                                        AND tv.id.maTaiKhoan <> :excludeUserId
+                                        AND tv.ngayXoa IS NOT NULL
+                """)
+                int restoreDeletedMembersExcept(
+                                @Param("maPhongChat") Integer maPhongChat,
+                                @Param("excludeUserId") Integer excludeUserId
+                );
+
+                @Modifying
+                @Transactional
+                @Query("""
+                                UPDATE ThanhVienPhong tv
+                                SET tv.ngayXoa = NULL
+                                WHERE tv.id.maPhongChat = :maPhongChat
+                                        AND tv.id.maTaiKhoan = :maTaiKhoan
+                                        AND tv.ngayXoa IS NOT NULL
+                """)
+                int restoreDeletedMember(
+                                                @Param("maPhongChat") Integer maPhongChat,
+                                                @Param("maTaiKhoan") Integer maTaiKhoan
+                );
 
     @Query("""
         SELECT new map(
@@ -84,6 +121,16 @@ public interface ThanhVienPhongRepository
                     AND tv.trangThaiThamGia = 'approved'
     """)
     List<Integer> getMemberIds(
+            @Param("maPhongChat") Integer maPhongChat
+    );
+
+    @Query("""
+        SELECT tv.id.maTaiKhoan
+        FROM ThanhVienPhong tv
+        WHERE tv.id.maPhongChat = :maPhongChat
+                    AND tv.trangThaiThamGia = 'approved'
+    """)
+    List<Integer> getMemberIdsForDelivery(
             @Param("maPhongChat") Integer maPhongChat
     );
 

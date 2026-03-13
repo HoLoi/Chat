@@ -168,8 +168,8 @@ public class VerifyPasswordChangeActivity extends AppCompatActivity {
             return;
         }
 
-        // Gửi request cập nhật trạng thái offline
-        StringRequest request = new StringRequest(Request.Method.POST, Constants.BASE_URL + "update_status.php",
+        // Gọi API logout để set offline + xóa token FCM trong DB
+        StringRequest request = new StringRequest(Request.Method.POST, Constants.BASE_URL + "user/logout",
                 response -> {
                     try {
                         JSONObject json = new JSONObject(response);
@@ -192,8 +192,7 @@ public class VerifyPasswordChangeActivity extends AppCompatActivity {
             @Override
             protected Map<String, String> getParams() {
                 Map<String, String> params = new HashMap<>();
-                params.put("email", email); //
-                params.put("status", "offline");
+                params.put("maTaiKhoan", String.valueOf(maTaiKhoan));
                 return params;
             }
         };

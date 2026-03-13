@@ -20,7 +20,7 @@ import java.util.List;
 public class ChatDatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "chat_local.db";
-    private static final int DATABASE_VERSION = 3;
+    private static final int DATABASE_VERSION = 4;
 
     // --- BẢNG ROOMS (Danh sách phòng chat) ---
     private static final String TABLE_ROOMS = "rooms";
@@ -34,10 +34,14 @@ public class ChatDatabaseHelper extends SQLiteOpenHelper {
     private static final String TABLE_MESSAGES = "messages";
     private static final String KEY_MSG_ID = "msg_id";
     private static final String KEY_MSG_CONTENT = "content";
+    private static final String KEY_MSG_SERVER_ID = "server_msg_id";
     private static final String KEY_SENDER_ID = "sender_id"; // Lưu maNguoiGui
+    private static final String KEY_RECEIVER_ID = "receiver_id";
     private static final String KEY_ROOM_REF = "room_id";
     private static final String KEY_MSG_TYPE = "msg_type";
     private static final String KEY_MSG_FILE = "file_url";
+    private static final String KEY_MSG_TIME = "sent_time";
+    private static final String KEY_MSG_DELIVERY_STATUS = "delivery_status";
     private static final String KEY_MSG_STATUS = "moderation_status";
 
     // --- BẢNG FRIENDS (Danh sách bạn bè) ---
@@ -64,11 +68,15 @@ public class ChatDatabaseHelper extends SQLiteOpenHelper {
         // Tạo bảng Messages
         String createMessageTable = "CREATE TABLE " + TABLE_MESSAGES + "(" 
               + KEY_MSG_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," 
+              + KEY_MSG_SERVER_ID + " INTEGER," 
               + KEY_ROOM_REF + " INTEGER," 
               + KEY_SENDER_ID + " INTEGER," 
+              + KEY_RECEIVER_ID + " INTEGER," 
               + KEY_MSG_CONTENT + " TEXT," 
               + KEY_MSG_TYPE + " TEXT," 
               + KEY_MSG_FILE + " TEXT," 
+              + KEY_MSG_TIME + " TEXT," 
+              + KEY_MSG_DELIVERY_STATUS + " TEXT," 
               + KEY_MSG_STATUS + " TEXT" + ")";
         db.execSQL(createMessageTable);
 
@@ -158,15 +166,25 @@ public class ChatDatabaseHelper extends SQLiteOpenHelper {
 
     // ================== XỬ LÝ MESSAGES ==================
 
-    // Thêm 1 tin nhắn mới (khi gửi hoặc nhận realtime)
     public void addMessage(int roomId, int maNguoiGui, String content, String loaiTinNhan, String fileUrl, String moderationStatus) {
+        addMessage(roomId, null, maNguoiGui, null, content, loaiTinNhan, fileUrl, null, null, moderationStatus);
+    }
+
+    // Thêm 1 tin nhắn mới (khi gửi hoặc nhận realtime)
+    public void addMessage(int roomId, Integer serverMessageId, int maNguoiGui, Integer maNguoiNhan,
+                           String content, String loaiTinNhan, String fileUrl,
+                           String thoiGianGui, String trangThaiTinNhan, String moderationStatus) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
+        values.put(KEY_MSG_SERVER_ID, serverMessageId);
         values.put(KEY_ROOM_REF, roomId);
         values.put(KEY_SENDER_ID, maNguoiGui);
+        values.put(KEY_RECEIVER_ID, maNguoiNhan);
         values.put(KEY_MSG_CONTENT, content);
         values.put(KEY_MSG_TYPE, loaiTinNhan);
         values.put(KEY_MSG_FILE, fileUrl);
+        values.put(KEY_MSG_TIME, thoiGianGui);
+        values.put(KEY_MSG_DELIVERY_STATUS, trangThaiTinNhan);
         values.put(KEY_MSG_STATUS, moderationStatus);
         db.insert(TABLE_MESSAGES, null, values);
         db.close();
@@ -182,11 +200,15 @@ public class ChatDatabaseHelper extends SQLiteOpenHelper {
 
             for (Message msg : messages) {
                 ContentValues values = new ContentValues();
+                values.put(KEY_MSG_SERVER_ID, msg.getId());
                 values.put(KEY_ROOM_REF, roomId);
                 values.put(KEY_SENDER_ID, msg.getMaNguoiGui()); // Sử dụng đúng getter của bạn
+                values.put(KEY_RECEIVER_ID, msg.getMaNguoiNhan());
                 values.put(KEY_MSG_CONTENT, msg.getNoiDung());
                 values.put(KEY_MSG_TYPE, msg.getLoaiTinNhan());
                 values.put(KEY_MSG_FILE, msg.getDuongDanFile());
+                values.put(KEY_MSG_TIME, msg.getThoiGianGui());
+                values.put(KEY_MSG_DELIVERY_STATUS, msg.getTrangThaiTinNhan());
                 values.put(KEY_MSG_STATUS, msg.getModerationStatus() != null ? msg.getModerationStatus().name() : null);
                 db.insert(TABLE_MESSAGES, null, values);
             }
@@ -208,9 +230,29 @@ public class ChatDatabaseHelper extends SQLiteOpenHelper {
         if (cursor.moveToFirst()) {
             do {
                 String content = cursor.getString(cursor.getColumnIndexOrThrow(KEY_MSG_CONTENT));
+                Integer serverMessageId = null;
+                int idxServerId = cursor.getColumnIndex(KEY_MSG_SERVER_ID);
+                if (idxServerId != -1 && !cursor.isNull(idxServerId)) {
+                    serverMessageId = cursor.getInt(idxServerId);
+                }
                 int senderId = cursor.getInt(cursor.getColumnIndexOrThrow(KEY_SENDER_ID));
+                Integer receiverId = null;
+                int idxReceiver = cursor.getColumnIndex(KEY_RECEIVER_ID);
+                if (idxReceiver != -1 && !cursor.isNull(idxReceiver)) {
+                    receiverId = cursor.getInt(idxReceiver);
+                }
                 String type = cursor.getString(cursor.getColumnIndexOrThrow(KEY_MSG_TYPE));
                 String file = cursor.getString(cursor.getColumnIndexOrThrow(KEY_MSG_FILE));
+                String sentTime = null;
+                int idxSentTime = cursor.getColumnIndex(KEY_MSG_TIME);
+                if (idxSentTime != -1) {
+                    sentTime = cursor.getString(idxSentTime);
+                }
+                String deliveryStatus = null;
+                int idxDelivery = cursor.getColumnIndex(KEY_MSG_DELIVERY_STATUS);
+                if (idxDelivery != -1) {
+                    deliveryStatus = cursor.getString(idxDelivery);
+                }
                 String statusStr = null;
                 int idxStatus = cursor.getColumnIndex(KEY_MSG_STATUS);
                 if (idxStatus != -1) {
@@ -219,7 +261,7 @@ public class ChatDatabaseHelper extends SQLiteOpenHelper {
 
                 boolean isMine = (senderId == myUserId);
                 com.example.chatrealtime.model.MessageModerationStatus st = com.example.chatrealtime.model.MessageModerationStatus.from(statusStr);
-                Message msg = new Message(content, isMine, senderId, type, file, null, null, st);
+                Message msg = new Message(serverMessageId, content, isMine, senderId, receiverId, type, file, sentTime, deliveryStatus, null, null, st);
                 list.add(msg);
             } while (cursor.moveToNext());
         }

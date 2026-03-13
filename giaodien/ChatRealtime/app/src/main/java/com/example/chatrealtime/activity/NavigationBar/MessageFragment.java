@@ -382,7 +382,7 @@ public class MessageFragment extends Fragment {
         SessionManager session = new SessionManager(requireContext());
         int maTaiKhoan = session.getMaTaiKhoan();
 
-        String url = Constants.BASE_URL +  "chat/rooms?maTaiKhoan=" + maTaiKhoan;
+        String url = Constants.BASE_URL +  "chat/rooms?maTaiKhoan=" + maTaiKhoan + "&hideDeletedGroupsWithoutNewMessage=true";
         Log.d(TAG, "📡 Gọi API: " + url);
 
         String token = session.getToken();

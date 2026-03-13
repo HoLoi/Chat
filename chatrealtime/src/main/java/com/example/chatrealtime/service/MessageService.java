@@ -60,6 +60,15 @@ public class MessageService {
             String loaiTinNhan,
             String duongDanFile
     ) {
+        var room = phongChatRepo.findById(maPhongChat)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phòng chat"));
+
+        if (room.getLoaiPhong() != null
+                && room.getLoaiPhong() == 1
+                && "deleted".equalsIgnoreCase(room.getTrangThaiPhong())) {
+            throw new IllegalStateException("Nhóm đã bị giải tán, không thể gửi tin nhắn");
+        }
+
         TaiKhoan sender = taiKhoanRepo.findById(maTaiKhoanGui)
                 .orElseThrow(() -> new IllegalArgumentException("Tài khoản không tồn tại"));
 
@@ -100,15 +109,17 @@ public class MessageService {
 
         // 2. Ghi trạng thái tin nhắn cho tất cả thành viên
         List<Integer> members =
-                tvPhongRepo.getMemberIds(maPhongChat);
+                tvPhongRepo.getMemberIdsForDelivery(maPhongChat);
 
         for (Integer uid : members) {
             TrangThaiTinNhan tt = new TrangThaiTinNhan();
             tt.setId(new TrangThaiTinNhanId(
                     saved.getMaTinNhan(), uid));
-            tt.setTrangThai(
-                    uid.equals(maTaiKhoanGui) ? "read" : "sent"
-            );
+            if (uid.equals(maTaiKhoanGui)) {
+                tt.setTrangThai("read");
+            } else {
+                tt.setTrangThai("sent");
+            }
             tt.setThoiGianCapNhat(LocalDateTime.now());
             trangThaiRepo.save(tt);
         }
@@ -143,6 +154,13 @@ public class MessageService {
                         tk -> tk
                 ));
 
+        Map<Integer, String> statusByMessageId = trangThaiRepo.getAggregateStatusByRoom(maPhongChat).stream()
+                .collect(Collectors.toMap(
+                        row -> (Integer) row[0],
+                        row -> String.valueOf(row[1]),
+                        (a, b) -> a
+                ));
+
         return raw.stream()
                 .map(t -> {
                     TaiKhoan tk = accountMap.get(t.getMaTaiKhoanGui());
@@ -165,6 +183,7 @@ public class MessageService {
                     m.put("tenNguoiGui", tenNguoiGui);
                     m.put("anhDaiDienNguoiGui", avatar != null ? avatar : "");
                     m.put("thoiGianGui", t.getThoiGianGui());
+                                        m.put("messageStatus", statusByMessageId.getOrDefault(t.getMaTinNhan(), "sent"));
                     return m;
                 })
                 .collect(Collectors.toList());

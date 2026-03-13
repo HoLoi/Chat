@@ -1,7 +1,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="8dp"
+    android:padding="6dp"
     android:gravity="end"
     android:orientation="horizontal"
     android:baselineAligned="false">
@@ -9,9 +9,10 @@
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:minWidth="150dp"
         android:orientation="vertical"
-        android:background="@android:drawable/dialog_holo_dark_frame"
-        android:padding="8dp">
+        android:background="@drawable/bg_message_sent"
+        android:padding="10dp">
 
         <FrameLayout
             android:id="@+id/mediaContainer"
@@ -23,25 +24,56 @@
                 android:id="@+id/imgMedia"
                 android:layout_width="match_parent"
                 android:layout_height="200dp"
-                android:scaleType="centerCrop" />
+                android:scaleType="centerCrop"/>
         </FrameLayout>
 
         <TextView
             android:id="@+id/txtMessage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:padding="6dp"
-            android:textColor="@android:color/white"/>
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"/>
+
+        <LinearLayout
+            android:id="@+id/footerMeta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minWidth="130dp"
+            android:layout_marginTop="4dp"
+            android:gravity="end"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/txtTimestamp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:singleLine="true"
+                android:textColor="#E3E7ED"
+                android:textSize="11sp"
+                android:visibility="gone"/>
+
+            <TextView
+                android:id="@+id/txtStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:singleLine="true"
+                android:textColor="#E3E7ED"
+                android:textSize="11sp"
+                android:visibility="gone"/>
+        </LinearLayout>
+
     </LinearLayout>
 
     <TextView
         android:id="@+id/avatarView"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
+        android:layout_width="34dp"
+        android:layout_height="34dp"
         android:gravity="center"
         android:textColor="@android:color/white"
-        android:textSize="14sp"
+        android:textSize="13sp"
         android:background="@drawable/avatar_circle"
         android:text="A"
-        android:layout_marginStart="8dp" />
+        android:layout_marginStart="8dp"/>
+
 </LinearLayout>
