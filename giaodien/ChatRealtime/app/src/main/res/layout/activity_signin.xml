@@ -136,6 +136,9 @@
         android:layout_gravity="center"
         android:layout_marginBottom="10dp"
         android:layout_weight="1"
-        android:textColor="@color/white" />
+        android:textColor="@color/white"
+        android:id="@+id/tv_forgot_password"
+        android:clickable="true"
+        android:focusable="true" />
 
 </LinearLayout>

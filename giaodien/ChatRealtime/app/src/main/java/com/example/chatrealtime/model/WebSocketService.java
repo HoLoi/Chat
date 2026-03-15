@@ -64,7 +64,7 @@ public class WebSocketService extends WebSocketListener {
         Request request = new Request.Builder().url(url).build();
         webSocket = client.newWebSocket(request, this);
 
-        Log.d(TAG, "🔄 Connecting to WebSocket: " + url);
+        Log.d(TAG, " Connecting to WebSocket: " + url);
     }
 
     /**
@@ -73,9 +73,9 @@ public class WebSocketService extends WebSocketListener {
     public void sendJson(JSONObject json) {
         if (webSocket != null && isConnected) {
             webSocket.send(json.toString());
-            Log.d(TAG, "📤 Sent: " + json);
+            Log.d(TAG, " Sent: " + json);
         } else {
-            Log.e(TAG, "❌ WebSocket not connected. Message not sent!");
+            Log.e(TAG, " WebSocket not connected. Message not sent!");
         }
     }
 
@@ -92,7 +92,7 @@ public class WebSocketService extends WebSocketListener {
     @Override
     public void onOpen(WebSocket webSocket, Response response) {
         isConnected = true;
-        Log.d(TAG, "✅ Connected to WebSocket server");
+        Log.d(TAG, " Connected to WebSocket server");
 
         if (currentUserId != -1) {
             try {
@@ -100,9 +100,9 @@ public class WebSocketService extends WebSocketListener {
                 init.put("type", "init");
                 init.put("userId", currentUserId);
                 sendJson(init);
-                Log.d(TAG, "📨 Sent init for user: " + currentUserId);
+                Log.d(TAG, " Sent init for user: " + currentUserId);
             } catch (JSONException e) {
-                Log.e(TAG, "❌ JSON error in onOpen", e);
+                Log.e(TAG, " JSON error in onOpen", e);
             }
         }
     }
@@ -112,22 +112,22 @@ public class WebSocketService extends WebSocketListener {
      */
     @Override
     public void onMessage(WebSocket webSocket, String text) {
-        Log.d(TAG, "📩 Received: " + text);
+        Log.d(TAG, "Received: " + text);
         try {
             JSONObject json = new JSONObject(text);
             String type = json.optString("type", "");
 
             switch (type) {
                 case "init":
-                    Log.d(TAG, "🟢 Init confirmed: " + json.optString("message"));
+                    Log.d(TAG, " Init confirmed: " + json.optString("message"));
                     break;
 
                 case "chat_message":
-                    Log.d(TAG, "💬 Chat message received: " + json);
+                    Log.d(TAG, " Chat message received: " + json);
 
 //                    int senderId = json.optInt("maTaiKhoanGui");
 //
-//                    // 🔥 BỎ QUA tin nhắn của chính mình (đã add UI rồi)
+//                    //  BỎ QUA tin nhắn của chính mình (đã add UI rồi)
 //                    if (senderId == currentUserId) {
 //                        Log.d(TAG, "⏭ Bỏ qua tin nhắn của chính mình.");
 //                        return;
@@ -137,7 +137,7 @@ public class WebSocketService extends WebSocketListener {
                     break;
 
                 case "message_status_update":
-                    Log.d(TAG, "📬 Message status update: " + json);
+                    Log.d(TAG, " Message status update: " + json);
                     messageLiveData.postValue(text);
                     break;
 
@@ -147,16 +147,16 @@ public class WebSocketService extends WebSocketListener {
 //                    messageLiveData.postValue(text);
 //                    break;
                 case "friend_accepted":
-                    Log.d(TAG, "🤝 Friend update: " + json);
+                    Log.d(TAG, " Friend update: " + json);
                     messageLiveData.postValue(text);
                     break;
 
                 default:
-                    Log.w(TAG, "⚠️ Unknown message type: " + type);
+                    Log.w(TAG, " Unknown message type: " + type);
                     break;
             }
         } catch (JSONException e) {
-            Log.e(TAG, "❌ Error parsing message", e);
+            Log.e(TAG, " Error parsing message", e);
         }
     }
 
@@ -167,7 +167,7 @@ public class WebSocketService extends WebSocketListener {
     public void onClosed(WebSocket webSocket, int code, String reason) {
         isConnected = false;
         this.webSocket = null;
-        Log.w(TAG, "❌ WebSocket closed: " + reason);
+        Log.w(TAG, " WebSocket closed: " + reason);
     }
 
     /**
@@ -177,7 +177,7 @@ public class WebSocketService extends WebSocketListener {
     public void onFailure(WebSocket webSocket, Throwable t, Response response) {
         isConnected = false;
         this.webSocket = null;
-        Log.e(TAG, "💥 WebSocket error: " + t.getMessage());
+        Log.e(TAG, " WebSocket error: " + t.getMessage());
 
         // Tự động reconnect nhẹ nhàng
         reconnect();
@@ -188,7 +188,7 @@ public class WebSocketService extends WebSocketListener {
      */
     private void reconnect() {
         if (currentUserId != -1 && client != null) {
-            Log.d(TAG, "🔁 Attempting reconnect...");
+            Log.d(TAG, " Attempting reconnect...");
             // Ví dụ: dùng lại URL cũ nếu cần
             // Hoặc bạn có thể lưu URL tạm khi connect
         }

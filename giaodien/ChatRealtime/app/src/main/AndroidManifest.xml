@@ -16,6 +16,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ChatRealtime"
         android:usesCleartextTraffic="true">
+        <activity
+            android:name=".activity.VerifyForgotPasswordActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.ForgotPasswordActivity"
+            android:exported="false" />
 
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
@@ -25,7 +31,7 @@
             android:name=".service.MyFirebaseMessagingService"
             android:exported="false">
             <intent-filter>
-                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
 

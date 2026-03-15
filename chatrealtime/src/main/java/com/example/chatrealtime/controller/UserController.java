@@ -74,7 +74,7 @@ public class UserController {
         nd.setTenNguoiDung(tenNguoiDung);
         nd.setGioiTinh(gioiTinh);
         if (ngaySinh != null && !ngaySinh.isEmpty()) {
-            nd.setNgaySinh(LocalDate.parse(ngaySinh)); // ✅ YYYY-MM-DD
+            nd.setNgaySinh(LocalDate.parse(ngaySinh)); // YYYY-MM-DD
         }
         nd.setSoDienThoai(soDienThoai);
 
@@ -90,28 +90,28 @@ public class UserController {
 
             File uploadDir = new File(uploadDirPath);
 
-            // 👉 TỰ TẠO THƯ MỤC NẾU CHƯA CÓ
+            // TỰ TẠO THƯ MỤC NẾU CHƯA CÓ
             if (!uploadDir.exists()) {
                 boolean created = uploadDir.mkdirs();
-                System.out.println("📁 Tạo thư mục uploads/avatars: " + created);
+                System.out.println(" Tạo thư mục uploads/avatars: " + created);
             }
 
-            System.out.println("📂 Upload dir = " + uploadDir.getAbsolutePath());
+            System.out.println(" Upload dir = " + uploadDir.getAbsolutePath());
 
             String filename = UUID.randomUUID() + "_" + image.getOriginalFilename();
             File dest = new File(uploadDir, filename);
 
-            System.out.println("📄 File sẽ lưu tại = " + dest.getAbsolutePath());
+            System.out.println(" File sẽ lưu tại = " + dest.getAbsolutePath());
 
             image.transferTo(dest);
 
             if (dest.exists()) {
-                System.out.println("✅ Upload ảnh thành công");
+                System.out.println(" Upload ảnh thành công");
             } else {
-                System.out.println("❌ Upload ảnh thất bại");
+                System.out.println(" Upload ảnh thất bại");
             }
 
-            // 👉 LƯU URL TƯƠNG ĐỐI (CỰC KỲ QUAN TRỌNG)
+            //  LƯU URL TƯƠNG ĐỐI (CỰC KỲ QUAN TRỌNG)
             String imageUrl = "/uploads/avatars/" + filename;
             nd.setAnhDaiDien(imageUrl);
             nguoiDungRepo.save(nd);
@@ -193,7 +193,7 @@ public class UserController {
 
         return nguoiDungRepo.getUserInfoByEmail(email)
                 .map(data -> {
-                    // ⚠️ KHÔNG GHÉP baseUrl NỮA
+                    //  KHÔNG GHÉP baseUrl NỮA
                     Object avatar = data.get("anhDaiDien_URL");
                     if (avatar != null) {
                         data.put("anhDaiDien_URL", avatar.toString());
@@ -243,7 +243,7 @@ public class UserController {
             nd.setGioiTinh(gioiTinh);
             nd.setSoDienThoai(soDienThoai);
 
-            // ✅ SAFE parse date
+            // SAFE parse date
             if (ngaySinh != null && !ngaySinh.isBlank()) {
                 try {
                     nd.setNgaySinh(LocalDate.parse(ngaySinh)); // yyyy-MM-dd
@@ -274,7 +274,7 @@ public class UserController {
             return res;
 
         } catch (Exception e) {
-            e.printStackTrace(); // 🔥 RẤT QUAN TRỌNG
+            e.printStackTrace(); // RẤT QUAN TRỌNG
             res.put("status", "error");
             res.put("message", "Lỗi server");
             return res;
@@ -340,7 +340,7 @@ public class UserController {
 
         TaiKhoan tk = opt.get();
 
-        // 👉 LƯU / CẬP NHẬT TOKEN
+        //  LƯU / CẬP NHẬT TOKEN
         tk.setToken(token);
         taiKhoanRepo.save(tk);
 

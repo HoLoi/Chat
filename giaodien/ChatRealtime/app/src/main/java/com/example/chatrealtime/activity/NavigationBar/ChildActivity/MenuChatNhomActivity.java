@@ -60,7 +60,7 @@ public class MenuChatNhomActivity extends AppCompatActivity {
     private Button btnChangeAvatar;
     private Button btnViewMembers;
     private Button btnAddMembers;
-    private TextView tvGroupNote;
+    //private TextView tvGroupNote;
 
     private int maPhong;
     private int myId;
@@ -128,7 +128,7 @@ public class MenuChatNhomActivity extends AppCompatActivity {
         btnAddMembers = findViewById(R.id.btn_add_members);
         btnTogglePrivacy = findViewById(R.id.btn_toggle_privacy);
         btnPendingRequests = findViewById(R.id.btn_pending_requests);
-        tvGroupNote = findViewById(R.id.tv_group_note);
+        //tvGroupNote = findViewById(R.id.tv_group_note);
     }
 
     private void loadRoomInfo() {
@@ -213,7 +213,7 @@ public class MenuChatNhomActivity extends AppCompatActivity {
         btnChangeAvatar.setVisibility(leaderVis);
         btnTogglePrivacy.setVisibility(leaderVis);
         btnPendingRequests.setVisibility(isLeader && kieuNhom == 1 ? View.VISIBLE : View.GONE);
-        tvGroupNote.setVisibility(leaderVis);
+        //tvGroupNote.setVisibility(leaderVis);
 
         btnTogglePrivacy.setText(kieuNhom == 1 ? "Chuyển sang công khai" : "Chuyển sang riêng tư");
         tvDeleteLeave.setText(isLeader ? "Giải tán nhóm" : "Rời nhóm");

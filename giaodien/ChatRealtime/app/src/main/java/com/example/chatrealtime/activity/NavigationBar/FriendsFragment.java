@@ -204,7 +204,7 @@ public class FriendsFragment extends Fragment {
 //        Volley.newRequestQueue(requireContext()).add(request);
 //    }
 
-    // ✅ API lấy danh sách bạn bè và tích hợp Offline
+    //  API lấy danh sách bạn bè và tích hợp Offline
     private void loadDanhSachBanBe(int maTaiKhoan) {
         tvSuggestionHeader.setVisibility(View.GONE);
         etSearch.clearFocus();

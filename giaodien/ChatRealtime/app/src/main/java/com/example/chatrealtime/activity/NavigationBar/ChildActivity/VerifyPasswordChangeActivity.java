@@ -1,14 +1,14 @@
 package com.example.chatrealtime.activity.NavigationBar.ChildActivity;
 
-import static android.app.PendingIntent.getActivity;
-
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -37,8 +37,9 @@ public class VerifyPasswordChangeActivity extends AppCompatActivity {
     EditText[] otpInputs;
     Button btnVerify;
 
-    String email, oldPassword, newPassword, realOtp;
+    String email, oldPassword, newPassword;
     ProgressBar progressBar;
+    TextView tvResend;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,17 +64,18 @@ public class VerifyPasswordChangeActivity extends AppCompatActivity {
 
         btnVerify = findViewById(R.id.btnVerify);
         progressBar = findViewById(R.id.progressBarChangePassword);
+        tvResend = findViewById(R.id.tvResend);
 
         // Lấy dữ liệu từ Intent
         email = getIntent().getStringExtra("email");
         oldPassword = getIntent().getStringExtra("oldPassword");
         newPassword = getIntent().getStringExtra("newPassword");
-        realOtp = getIntent().getStringExtra("otp");
 
         // Tự động focus ô tiếp theo
         setAutoMoveOTP();
 
         btnVerify.setOnClickListener(v -> verifyOtp());
+        tvResend.setOnClickListener(v -> resendOtp());
     }
 
     private void setAutoMoveOTP() {
@@ -107,21 +109,18 @@ public class VerifyPasswordChangeActivity extends AppCompatActivity {
             return;
         }
 
-        if (!inputOtp.equals(realOtp)) {
-            Toast.makeText(this, "Mã OTP không chính xác", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        // Nếu OTP đúng → gửi request đổi mật khẩu
-        changePassword();
+        // Gửi request xác nhận OTP và đổi mật khẩu
+        confirmChangePassword(inputOtp);
     }
 
-    private void changePassword() {
+    private void confirmChangePassword(String otp) {
+        progressBar.setVisibility(View.VISIBLE);
+        btnVerify.setEnabled(false);
         RequestQueue queue = Volley.newRequestQueue(this);
 
         StringRequest request = new StringRequest(
                 Request.Method.POST,
-                Constants.BASE_URL + "changePassword_verify.php",
+                Constants.BASE_URL + "auth/confirm-change-password",
                 response -> {
                     try {
                         JSONObject obj = new JSONObject(response);
@@ -143,8 +142,14 @@ public class VerifyPasswordChangeActivity extends AppCompatActivity {
                     } catch (Exception e) {
                         Toast.makeText(this, "Lỗi xử lý phản hồi", Toast.LENGTH_SHORT).show();
                     }
+                    progressBar.setVisibility(View.GONE);
+                    btnVerify.setEnabled(true);
                 },
-                error -> Toast.makeText(this, "Lỗi mạng, vui lòng thử lại", Toast.LENGTH_SHORT).show()
+                error -> {
+                    Toast.makeText(this, "Lỗi mạng, vui lòng thử lại", Toast.LENGTH_SHORT).show();
+                    progressBar.setVisibility(View.GONE);
+                    btnVerify.setEnabled(true);
+                }
         ) {
             @Override
             protected Map<String, String> getParams() {
@@ -152,11 +157,43 @@ public class VerifyPasswordChangeActivity extends AppCompatActivity {
                 params.put("email", email);
                 params.put("oldPassword", oldPassword);
                 params.put("newPassword", newPassword);
+                params.put("otp", otp);
                 return params;
             }
         };
 
         queue.add(request);
+    }
+
+    private void resendOtp() {
+        if (email == null || email.trim().isEmpty()) {
+            Toast.makeText(this, "Không tìm thấy tài khoản", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        StringRequest request = new StringRequest(
+                Request.Method.POST,
+                Constants.BASE_URL + "auth/request-change-password",
+                response -> {
+                    try {
+                        JSONObject obj = new JSONObject(response);
+                        Toast.makeText(this, obj.optString("message", "Đã gửi lại OTP"), Toast.LENGTH_SHORT).show();
+                    } catch (Exception e) {
+                        Toast.makeText(this, "Lỗi xử lý phản hồi", Toast.LENGTH_SHORT).show();
+                    }
+                },
+                error -> Toast.makeText(this, "Không thể kết nối server", Toast.LENGTH_SHORT).show()
+        ) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                params.put("email", email);
+                params.put("oldPassword", oldPassword);
+                return params;
+            }
+        };
+
+        Volley.newRequestQueue(VerifyPasswordChangeActivity.this).add(request);
     }
 
     public void dangxuat() {

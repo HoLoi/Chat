@@ -73,10 +73,11 @@
                 android:hint="Nhập tên "
                 android:inputType="text"
                 android:maxLines="1"
+                android:maxLength="50"
                 android:paddingStart="12dp"
                 android:paddingEnd="12dp"
                 android:background="@android:drawable/edit_text"
-                android:imeOptions="actionSearch" />
+                android:imeOptions="actionSearch"/>
 
             <ImageButton
                 android:id="@+id/btnSearch"

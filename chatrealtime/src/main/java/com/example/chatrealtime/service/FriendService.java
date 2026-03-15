@@ -35,7 +35,7 @@ public class FriendService {
         if (fromId.equals(toId))
             throw new RuntimeException("Không thể gửi lời mời cho chính mình");
 
-        // 🚫 chỉ chặn nếu CHÍNH CHIỀU đó còn hiệu lực
+        // chỉ chặn nếu CHÍNH CHIỀU đó còn hiệu lực
         if (repo.existsActiveRequest(fromId, toId))
             throw new RuntimeException("Đã gửi lời mời trước đó");
 

@@ -141,7 +141,7 @@ public class FriendAdapter extends BaseAdapter {
         return convertView;
     }
 
-    // ✅ Khi click vào bạn bè
+    // Khi click vào bạn bè
     private void handleFriendClick(JSONObject friend, String friendName) {
         try {
             String type = friend.optString("type", "friend");
@@ -178,19 +178,19 @@ public class FriendAdapter extends BaseAdapter {
                             }
 
                         } catch (Exception e) {
-                            Log.e(TAG, "❌ Lỗi xử lý phản hồi server: " + e.getMessage(), e);
+                            Log.e(TAG, " Lỗi xử lý phản hồi server: " + e.getMessage(), e);
                             Toast.makeText(context, "Lỗi phản hồi server", Toast.LENGTH_SHORT).show();
                         }
                     },
                     error -> {
-                        Log.e(TAG, "❌ Lỗi kết nối server: " + error.toString());
+                        Log.e(TAG, "Lỗi kết nối server: " + error.toString());
                         Toast.makeText(context, "Không thể kết nối server", Toast.LENGTH_SHORT).show();
                     }
             ) {
 //                @Override
 //                protected Map<String, String> getParams() {
 //                    Map<String, String> params = new HashMap<>();
-//                    // ✅ Backend chỉ cần friendId, userId lấy từ token
+//                    //  Backend chỉ cần friendId, userId lấy từ token
 //                    params.put("members", "[" + friendId + "]");
 //                    return params;
 //                }
@@ -214,17 +214,17 @@ public class FriendAdapter extends BaseAdapter {
             Volley.newRequestQueue(context).add(req);
 
         } catch (Exception e) {
-            Log.e(TAG, "❌ Lỗi khi click bạn bè: " + e.getMessage(), e);
+            Log.e(TAG, " Lỗi khi click bạn bè: " + e.getMessage(), e);
         }
     }
 
-    // ✅ Tạo phòng mới khi chưa có
+    //  Tạo phòng mới khi chưa có
     private void createNewRoom(int friendId, String friendName) {
         String url = Constants.BASE_URL + "chat/create-room";
         SessionManager sm = new SessionManager(context);
         String token = sm.getToken();
 
-        Log.d(TAG, "🔨 Gửi request tạo phòng mới: " + url);
+        Log.d(TAG, " Gửi request tạo phòng mới: " + url);
 
         StringRequest req = new StringRequest(Request.Method.POST, url,
                 response -> {
@@ -233,16 +233,16 @@ public class FriendAdapter extends BaseAdapter {
                         JSONObject obj = new JSONObject(response);
                         if (obj.getString("status").equals("success") && obj.has("maPhongChat")) {
                             int maPhong = obj.getInt("maPhongChat");
-                            Log.i(TAG, "✅ Tạo phòng mới thành công → maPhong=" + maPhong);
+                            Log.i(TAG, " Tạo phòng mới thành công → maPhong=" + maPhong);
                             openChat(maPhong, friendId, friendName);
                         } else {
                             Toast.makeText(context, "Không thể tạo phòng mới", Toast.LENGTH_SHORT).show();
                         }
                     } catch (Exception e) {
-                        Log.e(TAG, "❌ Lỗi khi tạo phòng mới: " + e.getMessage(), e);
+                        Log.e(TAG, " Lỗi khi tạo phòng mới: " + e.getMessage(), e);
                     }
                 },
-                error -> Log.e(TAG, "❌ Lỗi kết nối khi tạo phòng mới: " + error)
+                error -> Log.e(TAG, " Lỗi kết nối khi tạo phòng mới: " + error)
         ) {
             @Override
             protected Map<String, String> getParams() {
@@ -284,11 +284,11 @@ public class FriendAdapter extends BaseAdapter {
 
             Volley.newRequestQueue(context).add(req);
         } catch (Exception e) {
-            Log.e(TAG, "❌ Lỗi gửi lời mời: " + e.getMessage(), e);
+            Log.e(TAG, " Lỗi gửi lời mời: " + e.getMessage(), e);
         }
     }
 
-    // ✅ Mở phòng chat
+    //  Mở phòng chat
     private void openChat(int maPhong, int friendId, String friendName) {
         Intent intent = new Intent(context, ChatActivity.class);
         intent.putExtra("maPhong", maPhong);

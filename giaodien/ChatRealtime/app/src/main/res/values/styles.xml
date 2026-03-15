@@ -40,6 +40,7 @@
         <item name="android:gravity">center_horizontal|start</item>
         <item name="android:singleLine">true</item>
         <item name="android:maxLength">50</item>
+        <item name="android:maxLines">1</item>
     </style>
 
     <style name="textInputLayout_singin">
@@ -71,6 +72,7 @@
         <item name="android:gravity">center_horizontal|start</item>
         <item name="android:singleLine">true</item>
         <item name="android:maxLength">50</item>
+        <item name="android:maxLines">1</item>
     </style>
 
     <style name="CircularImage">

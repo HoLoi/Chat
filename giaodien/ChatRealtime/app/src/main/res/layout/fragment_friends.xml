@@ -36,7 +36,9 @@
                 android:layout_height="match_parent"
                 android:background="@android:color/transparent"
                 android:hint="Tìm kiếm bạn bè..."
-                android:paddingStart="8dp"/>
+                android:paddingStart="8dp"
+                android:maxLength="50"
+                android:maxLines="1"/>
         </LinearLayout>
 
     </LinearLayout>

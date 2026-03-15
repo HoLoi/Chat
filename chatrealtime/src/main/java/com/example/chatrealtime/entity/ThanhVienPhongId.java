@@ -22,7 +22,7 @@ public class ThanhVienPhongId implements Serializable {
         this.maTaiKhoan = maTaiKhoan;
     }
 
-    // 🔥 BẮT BUỘC PHẢI CÓ
+    //  BẮT BUỘC PHẢI CÓ
     public Integer getMaPhongChat() {
         return maPhongChat;
     }

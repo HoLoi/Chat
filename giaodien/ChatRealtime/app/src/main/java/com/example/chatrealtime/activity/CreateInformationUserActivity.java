@@ -91,7 +91,7 @@ public class CreateInformationUserActivity extends AppCompatActivity {
             return;
         }
 
-        // 🔹 Quyền đọc ảnh (Android 11 trở xuống)
+        // Quyền đọc ảnh (Android 11 trở xuống)
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S) {
             if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
                     != PackageManager.PERMISSION_GRANTED) {
@@ -147,7 +147,7 @@ public class CreateInformationUserActivity extends AppCompatActivity {
             datePickerDialog.show();
         });
 
-        // 📸 Chọn ảnh đại diện
+        // Chọn ảnh đại diện
         imageview_edit_avatar.setOnClickListener(v -> chooseImage());
 
         btnXacNhan.setOnClickListener(new View.OnClickListener() {
@@ -202,7 +202,7 @@ public class CreateInformationUserActivity extends AppCompatActivity {
 //                .addFormDataPart("ngaySinh", ngaySinh)
 //                .addFormDataPart("soDienThoai", soDienThoai);
 //
-//        // 🖼️ Nếu có chọn ảnh thì thêm vào multipart
+//        //  Nếu có chọn ảnh thì thêm vào multipart
 //        if (selectedImageUri != null) {
 //            try {
 //                byte[] imageBytes = readBytesFromUri(selectedImageUri);
@@ -220,28 +220,28 @@ public class CreateInformationUserActivity extends AppCompatActivity {
 //                .post(requestBody)
 //                .build();
 //
-//        Log.d(TAG, "🚀 Upload thông tin cho " + emailUser);
+//        Log.d(TAG, " Upload thông tin cho " + emailUser);
 //
 //        new Thread(() -> {
 //            try (Response response = client.newCall(request).execute()) {
 //                String res = response.body() != null ? response.body().string() : "null";
-//                Log.d(TAG, "📥 Phản hồi server: " + res);
+//                Log.d(TAG, " Phản hồi server: " + res);
 //
 //                runOnUiThread(() -> {
 //                    progressBar.setVisibility(View.GONE);
 //                    btnXacNhan.setEnabled(true);
 //                    if (res.contains("\"success\"")) {
-//                        Toast.makeText(this, "✅ Tạo thông tin thành công!", Toast.LENGTH_SHORT).show();
+//                        Toast.makeText(this, " Tạo thông tin thành công!", Toast.LENGTH_SHORT).show();
 //                        startActivity(new Intent(this, TrangChuActivity.class));
 //                        finish();
 //
 //                        updateStatus("online");
 //                    } else {
-//                        Toast.makeText(this, "⚠️ Lỗi khi tạo thông tin!", Toast.LENGTH_SHORT).show();
+//                        Toast.makeText(this, " Lỗi khi tạo thông tin!", Toast.LENGTH_SHORT).show();
 //                    }
 //                });
 //            } catch (IOException e) {
-//                Log.e(TAG, "❌ Lỗi khi upload: " + e.getMessage(), e);
+//                Log.e(TAG, " Lỗi khi upload: " + e.getMessage(), e);
 //                runOnUiThread(() ->{
 //                    progressBar.setVisibility(View.GONE);
 //                    btnXacNhan.setEnabled(true);
@@ -277,7 +277,7 @@ public class CreateInformationUserActivity extends AppCompatActivity {
                 .addFormDataPart("ngaySinh", ngaySinh)
                 .addFormDataPart("soDienThoai", soDienThoai);
 
-        // 🖼️ Avatar (nếu có)
+        //  Avatar (nếu có)
         if (selectedImageUri != null) {
             try {
                 byte[] imageBytes = readBytesFromUri(selectedImageUri);
@@ -313,7 +313,7 @@ public class CreateInformationUserActivity extends AppCompatActivity {
                         String status = json.optString("status");
 
                         if ("success".equals(status)) {
-                            Toast.makeText(this, "✅ Tạo thông tin thành công", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this, " Tạo thông tin thành công", Toast.LENGTH_SHORT).show();
 
                             updateStatus("online");
                             startActivity(new Intent(this, TrangChuActivity.class));
@@ -339,7 +339,7 @@ public class CreateInformationUserActivity extends AppCompatActivity {
     }
 
 
-    // 🔹 Cập nhật trạng thái online/offline
+    //  Cập nhật trạng thái online/offline
 //    private void updateStatus(String status) {
 //        int maTaiKhoan = sessionManager.getMaTaiKhoan();
 //        if (maTaiKhoan == -1) return;
@@ -380,9 +380,9 @@ public class CreateInformationUserActivity extends AppCompatActivity {
         new Thread(() -> {
             try (Response response = client.newCall(request).execute()) {
                 String res = response.body() != null ? response.body().string() : "";
-                Log.d(TAG, "✅ Update status response: " + res);
+                Log.d(TAG, " Update status response: " + res);
             } catch (IOException e) {
-                Log.e(TAG, "❌ Update status failed", e);
+                Log.e(TAG, " Update status failed", e);
             }
         }).start();
     }

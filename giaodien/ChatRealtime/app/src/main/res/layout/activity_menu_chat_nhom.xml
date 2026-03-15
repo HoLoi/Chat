@@ -5,21 +5,22 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#F5F6FA">
+    android:background="#F6F7FB">
 
+    <!-- HEADER -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="56dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingStart="12dp"
+        android:paddingStart="14dp"
         android:paddingEnd="16dp"
         android:background="@drawable/background_main">
 
         <ImageView
             android:id="@+id/iv_back_menu_chat"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
             android:padding="6dp"
             android:background="@drawable/bg_circle_light"
             android:src="@drawable/ic_back" />
@@ -27,15 +28,16 @@
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
+            android:layout_marginStart="12dp"
             android:layout_weight="1"
             android:text="Tùy chọn nhóm"
             android:textColor="@android:color/white"
-            android:textSize="19sp"
+            android:textSize="20sp"
             android:textStyle="bold" />
 
     </LinearLayout>
 
+    <!-- CONTENT -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -48,17 +50,18 @@
             android:orientation="vertical"
             android:padding="16dp">
 
+            <!-- GROUP INFO CARD -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="18dp"
+                android:padding="20dp"
                 android:background="@drawable/bg_card">
 
                 <com.google.android.material.imageview.ShapeableImageView
                     android:id="@+id/iv_menu_avatar"
-                    android:layout_width="120dp"
-                    android:layout_height="120dp"
+                    android:layout_width="110dp"
+                    android:layout_height="110dp"
                     android:layout_gravity="center"
                     android:scaleType="centerCrop"
                     android:src="@drawable/avatar_default"
@@ -72,90 +75,126 @@
                     android:gravity="center"
                     android:text="Tên nhóm"
                     android:textColor="#111827"
-                    android:textSize="21sp"
+                    android:textSize="20sp"
                     android:textStyle="bold" />
+
             </LinearLayout>
 
+
+            <!-- GROUP ACTIONS -->
             <LinearLayout
                 android:id="@+id/layout_group_actions"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
+                android:layout_marginTop="18dp"
                 android:orientation="vertical"
-                android:padding="16dp"
-                android:background="@drawable/bg_card">
+                android:background="@drawable/bg_card"
+                android:padding="8dp">
 
                 <Button
                     android:id="@+id/btn_rename_group"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="48dp"
                     android:text="Đổi tên nhóm"
-                    android:textAllCaps="false" />
+                    android:textAllCaps="false"
+                    android:gravity="start|center_vertical"
+                    android:paddingStart="14dp"
+                    android:textColor="#1F2937"
+                    app:backgroundTint="@null"
+                    android:background="@drawable/bg_menu_item"/>
 
                 <Button
                     android:id="@+id/btn_change_avatar"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_height="48dp"
                     android:text="Đổi ảnh đại diện"
-                    android:textAllCaps="false" />
+                    android:textAllCaps="false"
+                    android:gravity="start|center_vertical"
+                    android:paddingStart="14dp"
+                    android:layout_marginTop="6dp"
+                    android:textColor="#1F2937"
+                    app:backgroundTint="@null"
+                    android:background="@drawable/bg_menu_item"/>
 
                 <Button
                     android:id="@+id/btn_view_members"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_height="48dp"
                     android:text="Xem thành viên"
-                    android:textAllCaps="false" />
+                    android:textAllCaps="false"
+                    android:gravity="start|center_vertical"
+                    android:paddingStart="14dp"
+                    android:layout_marginTop="6dp"
+                    android:textColor="#1F2937"
+                    app:backgroundTint="@null"
+                    android:background="@drawable/bg_menu_item"/>
 
                 <Button
                     android:id="@+id/btn_add_members"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_height="48dp"
                     android:text="Thêm thành viên"
-                    android:textAllCaps="false" />
+                    android:textAllCaps="false"
+                    android:gravity="start|center_vertical"
+                    android:paddingStart="14dp"
+                    android:layout_marginTop="6dp"
+                    android:textColor="#1F2937"
+                    app:backgroundTint="@null"
+                    android:background="@drawable/bg_menu_item"/>
 
                 <Button
                     android:id="@+id/btn_toggle_privacy"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_height="48dp"
                     android:text="Chuyển Public/Private"
-                    android:textAllCaps="false" />
+                    android:textAllCaps="false"
+                    android:gravity="start|center_vertical"
+                    android:paddingStart="14dp"
+                    android:layout_marginTop="6dp"
+                    android:textColor="#1F2937"
+                    app:backgroundTint="@null"
+                    android:background="@drawable/bg_menu_item"/>
 
                 <Button
                     android:id="@+id/btn_pending_requests"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_height="48dp"
                     android:text="Duyệt yêu cầu tham gia"
-                    android:textAllCaps="false" />
+                    android:textAllCaps="false"
+                    android:gravity="start|center_vertical"
+                    android:paddingStart="14dp"
+                    android:layout_marginTop="6dp"
+                    android:textColor="#1F2937"
+                    app:backgroundTint="@null"
+                    android:background="@drawable/bg_menu_item"/>
 
-                <TextView
-                    android:id="@+id/tv_group_note"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:text="Các thao tác quản trị chỉ hiển thị cho trưởng nhóm"
-                    android:textColor="#6B7280"
-                    android:textSize="13sp" />
+                <!--                <TextView-->
+                <!--                    android:id="@+id/tv_group_note"-->
+                <!--                    android:layout_width="match_parent"-->
+                <!--                    android:layout_height="wrap_content"-->
+                <!--                    android:layout_marginTop="10dp"-->
+                <!--                    android:text="Các thao tác quản trị chỉ hiển thị cho trưởng nhóm"-->
+                <!--                    android:textColor="#6B7280"-->
+                <!--                    android:textSize="13sp" />-->
+
             </LinearLayout>
 
         </LinearLayout>
     </ScrollView>
 
+
+    <!-- LEAVE GROUP -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="60dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:padding="14dp"
+        android:padding="16dp"
         android:background="#FFF1F2">
 
         <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
             android:src="@drawable/ic_delete" />
 
         <TextView
@@ -168,6 +207,8 @@
             android:textColor="#D92D20"
             android:textSize="16sp"
             android:textStyle="bold" />
+
     </LinearLayout>
 
 </LinearLayout>
+

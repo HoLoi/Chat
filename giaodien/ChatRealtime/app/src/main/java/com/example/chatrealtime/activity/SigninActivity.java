@@ -41,6 +41,7 @@ import java.util.Map;
 public class SigninActivity extends AppCompatActivity {
 
     private TextView tv_taotk;
+    private TextView tvForgotPassword;
     private TextInputLayout tilEmail, tilMatKhau;
     private TextInputEditText tieEmail, tieMatKhau;
     private Button btnSignin;
@@ -65,7 +66,7 @@ public class SigninActivity extends AppCompatActivity {
         KiemTraThayDoi();
 
         // Nếu đã đăng nhập rồi thì vào thẳng Trang chủ
-        if (sessionManager.isLoggedIn()) {
+        if (sessionManager.isLoggedIn() && sessionManager.getMaNguoiDung() != -1) {
             startActivity(new Intent(this, TrangChuActivity.class));
             finish();
             return;
@@ -80,6 +81,11 @@ public class SigninActivity extends AppCompatActivity {
             }
         });
 
+        tvForgotPassword.setOnClickListener(v -> {
+            Intent intent = new Intent(SigninActivity.this, ForgotPasswordActivity.class);
+            startActivity(intent);
+        });
+
         // Sự kiện nút đăng nhập
         btnSignin.setOnClickListener(v -> {
             String email = tieEmail.getText().toString().trim();
@@ -92,7 +98,7 @@ public class SigninActivity extends AppCompatActivity {
         });
     }
 
-    // 🔹 Gọi API đăng nhập
+    //  Gọi API đăng nhập
 //    private void dangNhapServer(String email, String password) {
 //        StringRequest request = new StringRequest(Request.Method.POST, Constants.BASE_URL + "login.php",
 //                response -> {
@@ -111,16 +117,16 @@ public class SigninActivity extends AppCompatActivity {
 //                            String token = account.getString("token");
 //                            int maNguoiDung = account.isNull("maNguoiDung") ? -1 : account.getInt("maNguoiDung");
 //
-//                            // ✅ Lưu thông tin session
+//                            //  Lưu thông tin session
 //                            sessionManager.login(maTaiKhoan, maNguoiDung, emailServer, token, cbGhiNho.isChecked());
 //
-//                            // ✅ Cập nhật trạng thái online
+//                            //  Cập nhật trạng thái online
 //                            updateStatus("online");
 //
-//                            // ✅ Kết nối WebSocket (truyền đúng userId)
+//                            //  Kết nối WebSocket (truyền đúng userId)
 //                            connectWebSocket(maTaiKhoan);
 //
-//                            // ✅ Chuyển hướng
+//                            //  Chuyển hướng
 //                            Intent intent = (maNguoiDung == -1)
 //                                    ? new Intent(SigninActivity.this, CreateInformationUserActivity.class)
 //                                    : new Intent(SigninActivity.this, TrangChuActivity.class);
@@ -272,7 +278,7 @@ public class SigninActivity extends AppCompatActivity {
         Volley.newRequestQueue(this).add(request);
     }
 
-    // 🔹 Cập nhật trạng thái online/offline
+    // Cập nhật trạng thái online/offline
 //    private void updateStatus(String status) {
 //        int maTaiKhoan = sessionManager.getMaTaiKhoan();
 //        if (maTaiKhoan == -1) return;
@@ -316,14 +322,14 @@ public class SigninActivity extends AppCompatActivity {
     }
 
 
-    // 🔹 Kết nối WebSocket đúng chuẩn
+    //  Kết nối WebSocket đúng chuẩn
     private void connectWebSocket(int userId) {
         WebSocketService socketService = WebSocketService.getInstance();
         socketService.connect(Constants.WEBSOCKET_URL, userId);
-        Log.d("WebSocket", "🔗 Đang kết nối WebSocket cho user: " + userId);
+        Log.d("WebSocket", " Đang kết nối WebSocket cho user: " + userId);
     }
 
-    // 🔹 Kiểm tra thay đổi input
+    //  Kiểm tra thay đổi input
     private void KiemTraThayDoi() {
         tieEmail.addTextChangedListener(new TextWatcher() {
             public void afterTextChanged(Editable s) {}
@@ -343,7 +349,7 @@ public class SigninActivity extends AppCompatActivity {
         });
     }
 
-    // 🔹 Validate Email
+    //  Validate Email
     private boolean kiemTraNhapLieuEmail() {
         String email = tieEmail.getText().toString().trim();
         if (email.isEmpty()) {
@@ -357,7 +363,7 @@ public class SigninActivity extends AppCompatActivity {
         return true;
     }
 
-    // 🔹 Validate Mật khẩu
+    // Validate Mật khẩu
     private boolean kiemTraNhapLieuMatKhau() {
         String matKhau = tieMatKhau.getText().toString().trim();
         if (matKhau.isEmpty()) {
@@ -372,9 +378,10 @@ public class SigninActivity extends AppCompatActivity {
         return true;
     }
 
-    // 🔹 Ánh xạ view
+    //  Ánh xạ view
     private void AnhXa() {
         tv_taotk = findViewById(R.id.tv_taotk);
+        tvForgotPassword = findViewById(R.id.tv_forgot_password);
         tilEmail = findViewById(R.id.textInputLayoutEmail);
         tilMatKhau = findViewById(R.id.textInputLayoutPassword);
         tieEmail = findViewById(R.id.textInputEditTextEmail);

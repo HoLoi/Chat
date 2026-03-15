@@ -4,11 +4,11 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -27,13 +27,13 @@ import org.json.JSONObject;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 
 public class ChangePasswordActivity extends AppCompatActivity {
 
     EditText edtOldPassword, edtNewPassword, edtConfirmNewPassword;
     Button btnChangePassword;
     ImageView btnback;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -59,129 +59,126 @@ public class ChangePasswordActivity extends AppCompatActivity {
         btnChangePassword.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.e("CLICK_CHANGE_PASSWORD", "Button Change Password clicked");
-                SessionManager sessionManager = new SessionManager(ChangePasswordActivity.this);
-                String email = sessionManager.getEmail();
-
-                String newPassword = edtNewPassword.getText().toString().trim();
-
-                // disable button de tranh nhan nhieu lan
-                btnChangePassword.setEnabled(false);
-
-                // sinh otp ngay trong android
-                String otp = String.valueOf(new Random().nextInt(900000) + 100000);
-
-                // Thực hiện thay đổi mật khẩu (gọi API hoặc cập nhật cơ sở dữ liệu)
-                StringRequest request = new StringRequest(Request.Method.POST, Constants.BASE_URL + "changePassword.php", response -> {
-                    // Xử lý phản hồi từ server
-                    Log.e("API_RESPONSE_CHANGE_PASSWORD", response);
-                    try {
-                        // Phân tích phản hồi JSON
-                        JSONObject jsonObject = new JSONObject(response);
-                        if (jsonObject.getString("status").equals("success")) {
-                            // Thay đổi mật khẩu thành công
-                            Intent intent = new Intent(ChangePasswordActivity.this, VerifyPasswordChangeActivity.class);
-                            intent.putExtra("email", email);
-                            intent.putExtra("oldPassword", edtOldPassword.getText().toString().trim());
-                            intent.putExtra("newPassword", newPassword);
-                            intent.putExtra("otp", otp);
-                            startActivity(intent);
-                            overridePendingTransition(android.R.anim.slide_in_left, android.R.anim.slide_out_right);
-                        } else {
-                            // Thay đổi mật khẩu thất bại
-                            btnChangePassword.setEnabled(true);
-                            Log.e("CHANGE_PASSWORD_ERROR", "Thay đổi mật khẩu thất bại");
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        Log.e("CHANGE_PASSWORD_EXCEPTION", e.toString());
-                    }
-                    btnChangePassword.setEnabled(true);
-                }, error -> {
-                    // Xử lý lỗi
-                    Log.e("CHANGE_PASSWORD_NETWORK_ERROR", error.toString());
-                }) {
-                    @Override
-                    protected Map<String, String> getParams() {
-                        Log.e("CHANGE_PASSWORD_PARAMS", "email: " + email + ", otp: " + otp);
-                        Map<String, String> params = new HashMap<>();
-                        params.put("email", email);
-                        params.put("otp", otp);
-                        return params;
-                    }
-                };
-
-                Volley.newRequestQueue(ChangePasswordActivity.this).add(request);
+                submitChangePassword();
             }
         });
+    }
+
+    private void submitChangePassword() {
+        SessionManager sessionManager = new SessionManager(ChangePasswordActivity.this);
+        String email = sessionManager.getEmail();
+
+        if (email == null || email.trim().isEmpty()) {
+            Toast.makeText(this, "Không tìm thấy thông tin tài khoản", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (!isInputValid()) {
+            return;
+        }
+
+        String oldPassword = edtOldPassword.getText().toString().trim();
+        String newPassword = edtNewPassword.getText().toString().trim();
+
+        btnChangePassword.setEnabled(false);
+
+        StringRequest request = new StringRequest(Request.Method.POST, Constants.BASE_URL + "auth/request-change-password", response -> {
+            try {
+                JSONObject jsonObject = new JSONObject(response);
+                String status = jsonObject.optString("status", "error");
+                String message = jsonObject.optString("message", "Có lỗi xảy ra");
+
+                if ("success".equals(status)) {
+                    Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(ChangePasswordActivity.this, VerifyPasswordChangeActivity.class);
+                    intent.putExtra("email", email);
+                    intent.putExtra("oldPassword", oldPassword);
+                    intent.putExtra("newPassword", newPassword);
+                    startActivity(intent);
+                    btnChangePassword.setEnabled(true);
+                } else {
+                    Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+                    btnChangePassword.setEnabled(true);
+                }
+            } catch (Exception e) {
+                Toast.makeText(this, "Lỗi xử lý phản hồi", Toast.LENGTH_SHORT).show();
+                btnChangePassword.setEnabled(true);
+            }
+        }, error -> {
+            Toast.makeText(this, "Không thể kết nối server", Toast.LENGTH_SHORT).show();
+            btnChangePassword.setEnabled(true);
+        }) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                params.put("email", email);
+                params.put("oldPassword", oldPassword);
+                return params;
+            }
+        };
+
+        Volley.newRequestQueue(ChangePasswordActivity.this).add(request);
+    }
+
+    private boolean isInputValid() {
+        String oldPassword = edtOldPassword.getText().toString().trim();
+        String newPassword = edtNewPassword.getText().toString().trim();
+        String confirmNewPassword = edtConfirmNewPassword.getText().toString().trim();
+
+        boolean isValid = true;
+
+        if (oldPassword.isEmpty()) {
+            edtOldPassword.setError("Vui lòng nhập mật khẩu hiện tại");
+            isValid = false;
+        } else {
+            edtOldPassword.setError(null);
+        }
+
+        if (newPassword.length() < 6) {
+            edtNewPassword.setError("Mật khẩu phải có ít nhất 6 ký tự");
+            isValid = false;
+        } else if (newPassword.equals(oldPassword)) {
+            edtNewPassword.setError("Mật khẩu mới không được trùng mật khẩu cũ");
+            isValid = false;
+        } else {
+            edtNewPassword.setError(null);
+        }
+
+        if (confirmNewPassword.isEmpty() || !newPassword.equals(confirmNewPassword)) {
+            edtConfirmNewPassword.setError("Mật khẩu không khớp");
+            isValid = false;
+        } else {
+            edtConfirmNewPassword.setError(null);
+        }
+
+        btnChangePassword.setEnabled(isValid);
+        return isValid;
     }
 
     public void CheckChangePassword() {
-        // kiem tra 2 mat khau moi co giong nhau khong
-        edtNewPassword.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void afterTextChanged(Editable editable) {
-
-            }
-
+        TextWatcher validationWatcher = new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
             }
 
             @Override
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                String newPassword = edtNewPassword.getText().toString().trim();
-                String confirmNewPassword = edtConfirmNewPassword.getText().toString().trim();
-                if(newPassword.length() >= 6){
-                    edtNewPassword.setError(null);
-                    if (newPassword.equals(confirmNewPassword)) {
-                        btnChangePassword.setEnabled(true);
-                        edtConfirmNewPassword.setError(null);
-                        edtNewPassword.setError(null);
-                    } else {
-                        btnChangePassword.setEnabled(false);
-                        edtConfirmNewPassword.setError("Mật khẩu không khớp");
-                        if(newPassword.equals(edtOldPassword.getText().toString().trim())){
-                            edtNewPassword.setError("Mật khẩu mới không được trùng với mật khẩu cũ");
-                        }
-                    }
-                } else {
-                    btnChangePassword.setEnabled(false);
-                    edtNewPassword.setError("Mật khẩu phải có ít nhất 6 ký tự");
-                }
+                isInputValid();
             }
-        });
 
-        edtConfirmNewPassword.addTextChangedListener(new TextWatcher() {
             @Override
             public void afterTextChanged(Editable editable) {
-
             }
+        };
 
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+        edtOldPassword.addTextChangedListener(validationWatcher);
+        edtNewPassword.addTextChangedListener(validationWatcher);
+        edtConfirmNewPassword.addTextChangedListener(validationWatcher);
 
-            }
-
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                String newPassword = edtNewPassword.getText().toString().trim();
-                String confirmNewPassword = edtConfirmNewPassword.getText().toString().trim();
-                if (newPassword.equals(confirmNewPassword)) {
-                    btnChangePassword.setEnabled(true);
-                    edtConfirmNewPassword.setError(null);
-                    edtNewPassword.setError(null);
-                } else {
-                    btnChangePassword.setEnabled(false);
-                    edtConfirmNewPassword.setError("Mật khẩu không khớp");
-                }
-            }
-        });
+        btnChangePassword.setEnabled(false);
     }
 
-    public void AnhXa()
-    {
+    public void AnhXa() {
         edtOldPassword = findViewById(R.id.et_current_password);
         edtNewPassword = findViewById(R.id.et_new_password);
         edtConfirmNewPassword = findViewById(R.id.et_confirm_password);

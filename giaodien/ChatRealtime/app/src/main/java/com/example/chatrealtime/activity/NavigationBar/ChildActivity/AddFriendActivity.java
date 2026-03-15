@@ -50,10 +50,10 @@ public class AddFriendActivity extends AppCompatActivity {
 
         int currentUserId = sessionManager.getMaTaiKhoan();
         WebSocketService socketService = WebSocketService.getInstance();
-        // ✅ Kết nối WebSocket nếu chưa kết nối
+        //  Kết nối WebSocket nếu chưa kết nối
         if (!socketService.isConnected()) {
             socketService.connect(Constants.WEBSOCKET_URL, currentUserId);
-            Log.d("AddFriend", "🔗 Đang kết nối WebSocket cho user: " + currentUserId);
+            Log.d("AddFriend", "Đang kết nối WebSocket cho user: " + currentUserId);
         }
 
         btnSendRequestAddFriend.setOnClickListener(view -> sendFriendRequest());
@@ -88,7 +88,7 @@ public class AddFriendActivity extends AppCompatActivity {
 //                            edtSAddFriend.getText().clear();
 //                            Toast.makeText(this, "Đã gửi lời mời kết bạn", Toast.LENGTH_SHORT).show();
 //
-//                            // ✅ Lấy userId người nhận từ API (chính xác)
+//                            //  Lấy userId người nhận từ API (chính xác)
 //                            int toUserId = json.optInt("maTaiKhoan2", 0);
 //                            if (toUserId > 0) {
 //                                sendFriendRequestRealtime(maNguoiGui, toUserId);
@@ -148,7 +148,7 @@ public class AddFriendActivity extends AppCompatActivity {
 
 
 
-//    // 🔥 Gửi realtime đến người nhận
+//    // Gửi realtime đến người nhận
 //    private void sendFriendRequestRealtime(int fromUserId, int toUserId) {
 //        try {
 //            JSONObject json = new JSONObject();
@@ -158,7 +158,7 @@ public class AddFriendActivity extends AppCompatActivity {
 //            json.put("message", "Bạn có lời mời kết bạn mới!");
 //
 //            WebSocketService.getInstance().sendJson(json);
-//            Log.d("AddFriend", "🔗 Gửi WebSocket friend_request: " + json);
+//            Log.d("AddFriend", " Gửi WebSocket friend_request: " + json);
 //        } catch (Exception e) {
 //            e.printStackTrace();
 //        }

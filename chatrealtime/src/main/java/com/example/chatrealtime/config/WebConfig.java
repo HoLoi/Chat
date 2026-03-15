@@ -6,7 +6,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.io.File;
 
-@Configuration // ⭐ BẮT BUỘC
+@Configuration // BẮT BUỘC
 public class WebConfig implements WebMvcConfigurer {
 
     @Override
@@ -15,7 +15,7 @@ public class WebConfig implements WebMvcConfigurer {
         String projectDir = System.getProperty("user.dir");
         String uploadPath = projectDir + File.separator + "uploads" + File.separator;
 
-        System.out.println("📂 Resource upload path = " + uploadPath);
+        System.out.println("Resource upload path = " + uploadPath);
 
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:" + uploadPath);

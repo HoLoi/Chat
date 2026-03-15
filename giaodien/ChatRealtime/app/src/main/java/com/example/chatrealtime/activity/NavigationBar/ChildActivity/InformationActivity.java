@@ -100,7 +100,7 @@ public class InformationActivity extends AppCompatActivity {
         // Chọn ảnh đại diện
         imageview_edit_avatar.setOnClickListener(v -> chooseImage());
 
-        // 🔹 Tải thông tin hiện tại
+        // ải thông tin hiện tại
         loadCurrentInformation();
 
 
@@ -182,7 +182,7 @@ public class InformationActivity extends AppCompatActivity {
 //        new Thread(() -> {
 //            try (Response response = client.newCall(request).execute()) {
 //                String res = response.body() != null ? response.body().string() : "null";
-//                Log.d(TAG, "📩 Thông tin người dùng: " + res);
+//                Log.d(TAG, " Thông tin người dùng: " + res);
 //
 //                JSONObject json = new JSONObject(res);
 //                if (json.getString("status").equals("success")) {
@@ -209,7 +209,7 @@ public class InformationActivity extends AppCompatActivity {
 //                    });
 //                }
 //            } catch (Exception e) {
-//                Log.e(TAG, "❌ Lỗi load thông tin: " + e.getMessage());
+//                Log.e(TAG, " Lỗi load thông tin: " + e.getMessage());
 //            }
 //        }).start();
 //    }
@@ -229,12 +229,12 @@ public class InformationActivity extends AppCompatActivity {
             try (Response response = client.newCall(request).execute()) {
 
                 if (!response.isSuccessful()) {
-                    Log.e(TAG, "❌ Load info failed: " + response.code());
+                    Log.e(TAG, "Load info failed: " + response.code());
                     return;
                 }
 
                 String res = response.body() != null ? response.body().string() : "";
-                Log.d(TAG, "📩 User info: " + res);
+                Log.d(TAG, "User info: " + res);
 
                 JSONObject json = new JSONObject(res);
 
@@ -267,7 +267,7 @@ public class InformationActivity extends AppCompatActivity {
                 }
 
             } catch (Exception e) {
-                Log.e(TAG, "❌ Load info error", e);
+                Log.e(TAG, " Load info error", e);
             }
         }).start();
     }
@@ -331,24 +331,24 @@ public class InformationActivity extends AppCompatActivity {
 //                .post(requestBody)
 //                .build();
 //
-//        Log.d(TAG, "🚀 Cập nhật thông tin cho " + emailUser);
+//        Log.d(TAG, " Cập nhật thông tin cho " + emailUser);
 //
 //        new Thread(() -> {
 //            try (Response response = client.newCall(request).execute()) {
 //                String res = response.body() != null ? response.body().string() : "null";
-//                Log.d(TAG, "📥 Phản hồi cập nhật: " + res);
+//                Log.d(TAG, "Phản hồi cập nhật: " + res);
 //
 //                runOnUiThread(() -> {
 //                    if (res.contains("\"success\"")) {
-//                        Toast.makeText(this, "✅ Cập nhật thông tin thành công!", Toast.LENGTH_SHORT).show();
+//                        Toast.makeText(this, " Cập nhật thông tin thành công!", Toast.LENGTH_SHORT).show();
 //                        //startActivity(new Intent(this, ProfileFragment.class));
 //                        finish();
 //                    } else {
-//                        Toast.makeText(this, "⚠️ Cập nhật thất bại!", Toast.LENGTH_SHORT).show();
+//                        Toast.makeText(this, "⚠Cập nhật thất bại!", Toast.LENGTH_SHORT).show();
 //                    }
 //                });
 //            } catch (IOException e) {
-//                Log.e(TAG, "❌ Lỗi khi upload: " + e.getMessage(), e);
+//                Log.e(TAG, " Lỗi khi upload: " + e.getMessage(), e);
 //                runOnUiThread(() ->
 //                        Toast.makeText(this, "Không thể kết nối server!", Toast.LENGTH_SHORT).show()
 //                );
@@ -394,12 +394,12 @@ public class InformationActivity extends AppCompatActivity {
                         imageBody
                 );
             } catch (Exception e) {
-                Log.e(TAG, "❌ Read image error", e);
+                Log.e(TAG, "Read image error", e);
             }
         }
 
         Request request = new Request.Builder()
-                // ✅ GỌI ĐÚNG API UPDATE
+                // GỌI ĐÚNG API UPDATE
                 .url(Constants.BASE_URL + "user/update-info")
                 .post(builder.build())
                 .build();
@@ -408,13 +408,13 @@ public class InformationActivity extends AppCompatActivity {
             try (Response response = client.newCall(request).execute()) {
 
                 String res = response.body() != null ? response.body().string() : "";
-                Log.d(TAG, "📥 Update response: " + res);
+                Log.d(TAG, "Update response: " + res);
 
                 JSONObject json = new JSONObject(res);
 
                 runOnUiThread(() -> {
                     if ("success".equals(json.optString("status"))) {
-                        Toast.makeText(this, "✅ Cập nhật thông tin thành công!", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Cập nhật thông tin thành công!", Toast.LENGTH_SHORT).show();
                         finish();
                     } else {
                         Toast.makeText(this,
@@ -424,7 +424,7 @@ public class InformationActivity extends AppCompatActivity {
                 });
 
             } catch (Exception e) {
-                Log.e(TAG, "❌ Upload error", e);
+                Log.e(TAG, "Upload error", e);
                 runOnUiThread(() ->
                         Toast.makeText(this, "Không kết nối được server!", Toast.LENGTH_SHORT).show()
                 );

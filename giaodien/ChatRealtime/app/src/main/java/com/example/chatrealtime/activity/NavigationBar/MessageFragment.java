@@ -383,7 +383,7 @@ public class MessageFragment extends Fragment {
         int maTaiKhoan = session.getMaTaiKhoan();
 
         String url = Constants.BASE_URL +  "chat/rooms?maTaiKhoan=" + maTaiKhoan + "&hideDeletedGroupsWithoutNewMessage=true";
-        Log.d(TAG, "📡 Gọi API: " + url);
+        Log.d(TAG, " Gọi API: " + url);
 
         String token = session.getToken();
 
@@ -468,7 +468,7 @@ public class MessageFragment extends Fragment {
         SessionManager session = new SessionManager(requireContext());
         String url = Constants.BASE_URL +  "chat/mark-read";
 
-        Log.d(TAG, "📡 Calling mark_read for room: " + maPhong);
+        Log.d(TAG, "Calling mark_read for room: " + maPhong);
 
         StringRequest request = new StringRequest(Request.Method.POST, url,
                 response -> Log.d(TAG, "Server marked read: " + response),

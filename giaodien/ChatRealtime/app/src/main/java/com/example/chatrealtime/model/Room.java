@@ -44,7 +44,7 @@ public class Room {
 
     public String getImageUrl() { return imageUrl; }
 
-    // ✅ Getter & Setter cho unreadCount
+    //  Getter & Setter cho unreadCount
     public int getUnreadCount() {
         return unreadCount;
     }
@@ -53,12 +53,12 @@ public class Room {
         this.unreadCount = unreadCount;
     }
 
-    // ✅ Tăng số lượng tin chưa đọc
+    //  Tăng số lượng tin chưa đọc
     public void incrementUnread() {
         this.unreadCount++;
     }
 
-    // ✅ Reset tin chưa đọc về 0
+    //  Reset tin chưa đọc về 0
     public void resetUnread() {
         this.unreadCount = 0;
     }

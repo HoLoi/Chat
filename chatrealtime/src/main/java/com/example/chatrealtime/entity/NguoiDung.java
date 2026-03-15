@@ -25,7 +25,7 @@ public class NguoiDung {
     @Column(name = "soDienThoai")
     private String soDienThoai;
 
-    // ⚠️ Đổi đúng tên cột DB
+    // Đổi đúng tên cột DB
     @Column(name = "anhDaiDien_URL")
     private String anhDaiDien;
 

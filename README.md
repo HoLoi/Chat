@@ -205,14 +205,7 @@ Các cấu hình quan trọng cần kiểm tra/chỉnh sửa:
 
 Sau khi cấu hình xong:
 
-```bash
-cd chatrealtime
-./mvnw spring-boot:run        # Linux/macOS
-rem hoặc trên Windows:
-mvnw.cmd spring-boot:run
-```
-
-Hoặc chạy trực tiếp class `ChatrealtimeApplication` từ IDE (IntelliJ, Eclipse, VS Code...).
+Chạy trực tiếp class `ChatrealtimeApplication` từ IDE (IntelliJ, Eclipse, VS Code...).
 
 Backend sẽ chạy trên `http://localhost:8080`.
 
@@ -222,9 +215,7 @@ Backend sẽ chạy trên `http://localhost:8080`.
 
 ```bash
 cd moderation-ai
-python -m venv .venv
 .venv\Scripts\activate         # Windows
-# hoặc source .venv/bin/activate trên Linux/macOS
 ```
 
 2. Cài đặt phụ thuộc:

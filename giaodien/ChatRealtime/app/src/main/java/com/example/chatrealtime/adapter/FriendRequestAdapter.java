@@ -91,7 +91,7 @@ public class FriendRequestAdapter extends ArrayAdapter<FriendRequest> {
                             list.remove(position);
                             notifyDataSetChanged();
 
-                            // ✅ Gửi realtime qua WebSocket khi đồng ý kết bạn
+                            // Gửi realtime qua WebSocket khi đồng ý kết bạn
                             if (action.equals("chap_nhan")) {
                                 try {
                                     // dùng tên khác để tránh trùng với respJson

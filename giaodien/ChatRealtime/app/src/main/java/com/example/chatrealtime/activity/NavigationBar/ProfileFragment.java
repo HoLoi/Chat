@@ -59,7 +59,7 @@ public class ProfileFragment extends Fragment {
         btnThongTin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Toast.makeText(getContext(), "Thong tin sinh vien", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(getContext(), "Thong tin sinh vien", Toast.LENGTH_SHORT).show();
                 Intent intent = new Intent(getActivity(), InformationActivity.class);
                 startActivity(intent);
             }
@@ -165,14 +165,14 @@ public class ProfileFragment extends Fragment {
 //                        if (json.getString("status").equals("success")) {
 //                            JSONObject data = json.getJSONObject("data");
 //
-//                            // ✅ Lấy đúng key theo JSON thực tế
+//                            // Lấy đúng key theo JSON thực tế
 //                            String avatarUrl = data.optString("anhDaiDien_URL");
 //                            String tenNguoiDung = data.optString("tenNguoiDung");
 //
-//                            // ✅ Hiển thị tên người dùng
+//                            // Hiển thị tên người dùng
 //                            txtTenUser.setText(tenNguoiDung.isEmpty() ? "Người dùng" : tenNguoiDung);
 //
-//                            // ✅ Load ảnh vào ImageView bằng Glide
+//                            // Load ảnh vào ImageView bằng Glide
 //                            if (avatarUrl != null && !avatarUrl.isEmpty()) {
 //                                Glide.with(requireContext())
 //                                        .load(avatarUrl) // vì JSON đã chứa URL đầy đủ (http://192.168.x.x/...)

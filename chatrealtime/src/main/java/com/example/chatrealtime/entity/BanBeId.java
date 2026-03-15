@@ -5,7 +5,7 @@ import jakarta.persistence.Embeddable;
 import java.io.Serializable;
 import java.util.Objects;
 
-@Embeddable   // 🔥 BẮT BUỘC
+@Embeddable   // BẮT BUỘC
 public class BanBeId implements Serializable {
 
     @Column(name = "maTaiKhoan1")

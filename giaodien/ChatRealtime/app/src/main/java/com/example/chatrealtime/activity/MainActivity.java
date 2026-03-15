@@ -35,9 +35,9 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        // ✅ Kiểm tra nếu đã đăng nhập thì chuyển thẳng sang Trang chủ
+        //  Kiểm tra nếu đã đăng nhập thì chuyển thẳng sang Trang chủ
         SessionManager sessionManager = new SessionManager(this);
-        if (sessionManager.isLoggedIn()) {
+        if (sessionManager.isLoggedIn() && sessionManager.getMaNguoiDung() != -1) {
             Intent intent = new Intent(MainActivity.this, TrangChuActivity.class);
             startActivity(intent);
             finish(); // Đóng MainActivity để không quay lại
@@ -45,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         requestNotificationPermissionIfNeeded();
-        promptEnableBubblesIfNeeded();
+        //promptEnableBubblesIfNeeded();
 
         btnSignin = findViewById(R.id.btn_signin);
         btnSignup = findViewById(R.id.btn_signup);
@@ -61,8 +61,8 @@ public class MainActivity extends AppCompatActivity {
         btnSignin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, SigninActivity.class);
-                startActivity(intent);
+                    Intent intent = new Intent(MainActivity.this, SigninActivity.class);
+                    startActivity(intent);
             }
         });
     }

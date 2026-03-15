@@ -161,7 +161,7 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     /**
-     * ✅ Kết nối WebSocket và join phòng
+     *  Kết nối WebSocket và join phòng
      */
     private void setupWebSocket() {
         WebSocketService ws = WebSocketService.getInstance();
@@ -170,24 +170,24 @@ public class ChatActivity extends AppCompatActivity {
             ws.connect(Constants.WEBSOCKET_URL, maTaiKhoan);
         }
 
-        // 🔹 Join room sau khi kết nối
+        // Join room sau khi kết nối
         try {
             JSONObject join = new JSONObject();
             join.put("type", "join_room");
             join.put("userId", maTaiKhoan);
             join.put("roomId", roomId);
             ws.sendJson(join);
-            Log.d("WS_JOIN", "🏠 Joined room " + roomId);
+            Log.d("WS_JOIN", "Joined room " + roomId);
         } catch (Exception e) {
-            Log.e("WS_JOIN_ERR", "❌ Lỗi join phòng: " + e.getMessage());
+            Log.e("WS_JOIN_ERR", "Lỗi join phòng: " + e.getMessage());
         }
 
-        // 🔹 Lắng nghe tin nhắn realtime
+        //  Lắng nghe tin nhắn realtime
         ws.getMessageLiveData().observe(this, newMessageObserver());
     }
 
     /**
-     * ✅ Gắn sự kiện click cho các nút
+     *  Gắn sự kiện click cho các nút
      */
     private void setupActions() {
         btnSend.setOnClickListener(v -> {
@@ -307,7 +307,7 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     /**
-     * ✅ Gửi tin nhắn qua WebSocket và lưu DB
+     *  Gửi tin nhắn qua WebSocket và lưu DB
      */
     private void sendMessage(String msg) {
         try {
@@ -321,24 +321,24 @@ public class ChatActivity extends AppCompatActivity {
             btnSend.setEnabled(false);
             sendMessageApi(json, null, "text", msg);
         } catch (Exception e) {
-            Log.e("SEND_MSG_ERR", "❌ Lỗi gửi tin nhắn: " + e.getMessage(), e);
+            Log.e("SEND_MSG_ERR", " Lỗi gửi tin nhắn: " + e.getMessage(), e);
             btnSend.setEnabled(true);
         }
     }
 
     /**
-     * ✅ Gửi request POST để lưu tin nhắn vào MySQL
+     *  Gửi request POST để lưu tin nhắn vào MySQL
      */
     private void sendMessageApi(JSONObject messageJson, String duongDanFile, String loaiTinNhan, String noiDungFallback) {
         String url = BASE_URL + "chat/send-message";
-        Log.d("SEND_API", "🟩 Gửi request lưu DB tới: " + url);
+        Log.d("SEND_API", " Gửi request lưu DB tới: " + url);
 
         String noiDungLocal = noiDungFallback != null ? noiDungFallback : messageJson.optString("noiDung", "");
         String loaiTinNhanLocal = loaiTinNhan != null ? loaiTinNhan : messageJson.optString("loaiTinNhan", "text");
 
         StringRequest req = new StringRequest(Request.Method.POST, url,
                 response -> {
-                    Log.d("SEND_API", "✅ Phản hồi từ server: " + response);
+                    Log.d("SEND_API", " Phản hồi từ server: " + response);
                     try {
                         JSONObject obj = new JSONObject(response.trim());
                         MessageModerationStatus status = MessageModerationStatus.from(obj.optString("status"));
@@ -346,13 +346,13 @@ public class ChatActivity extends AppCompatActivity {
                         Log.d("SEND_API_STATUS", "Status=" + status + " score=" + score);
                         handleModerationOutcome(status, noiDungLocal, loaiTinNhanLocal, duongDanFile);
                     } catch (Exception e) {
-                        Log.e("SEND_API_PARSE", "❌ Lỗi phân tích phản hồi: " + e.getMessage());
+                        Log.e("SEND_API_PARSE", " Lỗi phân tích phản hồi: " + e.getMessage());
                         Toast.makeText(this, "Gửi tin nhắn thất bại", Toast.LENGTH_SHORT).show();
                         btnSend.setEnabled(true);
                     }
                 },
                 error -> {
-                    Log.e("SEND_API_ERR", "❌ Lỗi khi lưu DB: " + error.toString());
+                    Log.e("SEND_API_ERR", " Lỗi khi lưu DB: " + error.toString());
                     if (error.networkResponse != null && error.networkResponse.statusCode == 403) {
                         showBannedDialog();
                     } else if (error.networkResponse != null && error.networkResponse.data != null) {
@@ -385,9 +385,9 @@ public class ChatActivity extends AppCompatActivity {
                     if (duongDanFile != null) {
                         params.put("duongDanFile", duongDanFile);
                     }
-                    Log.d("SEND_API_PARAMS", "📦 Params gửi đi: " + params);
+                    Log.d("SEND_API_PARAMS", "Params gửi đi: " + params);
                 } catch (Exception e) {
-                    Log.e("PARAM_ERR", "❌ Lỗi tạo params: " + e.getMessage());
+                    Log.e("PARAM_ERR", "Lỗi tạo params: " + e.getMessage());
                 }
                 return params;
             }
@@ -457,7 +457,7 @@ public class ChatActivity extends AppCompatActivity {
             if (duongDanFile != null) json.put("duongDanFile", duongDanFile);
             WebSocketService.getInstance().sendJson(json);
         } catch (Exception e) {
-            Log.e("WS_SEND", "❌ Lỗi gửi realtime: " + e.getMessage());
+            Log.e("WS_SEND", " Lỗi gửi realtime: " + e.getMessage());
         }
     }
 
@@ -591,7 +591,7 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     /**
-     * ✅ Tải lịch sử tin nhắn của phòng
+     *  Tải lịch sử tin nhắn của phòng
      */
     private void loadMessages() {
         //String url = BASE_URL + "get_messages.php?maPhongChat=" + roomId + "&maTaiKhoan=" + maTaiKhoan;
@@ -599,13 +599,13 @@ public class ChatActivity extends AppCompatActivity {
                 + "?maPhongChat=" + roomId
                 + "&maTaiKhoan=" + maTaiKhoan;
 
-        Log.d("LOAD_MSG", "📥 Tải tin nhắn từ: " + url);
+        Log.d("LOAD_MSG", " Tải tin nhắn từ: " + url);
 
         StringRequest req = new StringRequest(Request.Method.GET, url,
                 response -> {
                     try {
                         JSONObject obj = new JSONObject(response.trim());
-                        Log.d("LOAD_MSG_RES", "✅ Phản hồi tin nhắn: " + obj);
+                        Log.d("LOAD_MSG_RES", "Phản hồi tin nhắn: " + obj);
 
                         if ("success".equals(obj.optString("status"))) {
                             JSONArray arr = obj.optJSONArray("messages");
@@ -654,10 +654,10 @@ public class ChatActivity extends AppCompatActivity {
                             //Toast.makeText(this, obj.optString("message"), Toast.LENGTH_SHORT).show();
                         }
                     } catch (Exception e) {
-                        Log.e("LOAD_MSG_ERR", "❌ Lỗi đọc phản hồi: " + e.getMessage());
+                        Log.e("LOAD_MSG_ERR", "Lỗi đọc phản hồi: " + e.getMessage());
                     }
                 },
-                error -> Log.e("LOAD_MSG_ERR", "❌ Lỗi tải tin nhắn: " + error.toString())
+                error -> Log.e("LOAD_MSG_ERR", "Lỗi tải tin nhắn: " + error.toString())
         ) {
             @Override
             public Map<String, String> getHeaders() {
@@ -680,7 +680,7 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     /**
-     * ✅ Nhận tin nhắn realtime qua WebSocket
+     *  Nhận tin nhắn realtime qua WebSocket
      */
     private Observer<String> newMessageObserver() {
         return text -> {
@@ -722,7 +722,7 @@ public class ChatActivity extends AppCompatActivity {
                 String tenNguoiGui = obj.optString("tenNguoiGui", "");
                 String thoiGianGui = obj.optString("thoiGianGui", "");
 
-                Log.d("WS_NEW_MSG", "💬 Tin nhắn realtime: " + noiDung + " | Từ: " + maGui);
+                Log.d("WS_NEW_MSG", "Tin nhắn realtime: " + noiDung + " | Từ: " + maGui);
 
                 adapter.addMessage(new Message(null, noiDung, isMine, maGui, maTaiKhoan, loaiTinNhan, fileUrl, thoiGianGui, "sent", avatar, tenNguoiGui, MessageModerationStatus.CLEAN));
                 recyclerMessages.scrollToPosition(adapter.getItemCount() - 1);
@@ -734,7 +734,7 @@ public class ChatActivity extends AppCompatActivity {
                 markAsReadImmediately(roomId);
 
             } catch (Exception e) {
-                Log.e("WS_MSG_ERR", "❌ Lỗi nhận tin realtime: " + e.getMessage());
+                Log.e("WS_MSG_ERR", "Lỗi nhận tin realtime: " + e.getMessage());
             }
         };
     }
@@ -748,8 +748,8 @@ public class ChatActivity extends AppCompatActivity {
         Log.d("MARK_READ", "POST " + url + " maPhongChat=" + maPhong + " maTaiKhoan=" + session.getMaTaiKhoan());
 
         StringRequest request = new StringRequest(Request.Method.POST, url,
-                response -> Log.d("MARK_READ", "✅ Đã đánh dấu đọc tin mới"),
-                error -> Log.e("MARK_READ", "❌ Lỗi đánh dấu đọc: " + error.toString())
+                response -> Log.d("MARK_READ", "Đã đánh dấu đọc tin mới"),
+                error -> Log.e("MARK_READ", "Lỗi đánh dấu đọc: " + error.toString())
         ) {
             @Override
             protected Map<String, String> getParams() {
@@ -827,13 +827,13 @@ public class ChatActivity extends AppCompatActivity {
             }
 
             String url = BASE_URL + "chat/upload-file";
-            Log.d("UPLOAD_MEDIA", "➡️ Upload " + fileName + " size=" + fileData.length);
+            Log.d("UPLOAD_MEDIA", "Upload " + fileName + " size=" + fileData.length);
 
             VolleyMultipartRequest req = new VolleyMultipartRequest(Request.Method.POST, url,
                     response -> {
                         try {
                             String resStr = new String(response.data);
-                            Log.d("UPLOAD_MEDIA", "✅ Phản hồi: " + resStr);
+                            Log.d("UPLOAD_MEDIA", "Phản hồi: " + resStr);
                             JSONObject obj = new JSONObject(resStr);
                             MessageModerationStatus status = MessageModerationStatus.from(obj.optString("status"));
                             String fileUrl = obj.optString("duongDanFile", null);
@@ -844,12 +844,12 @@ public class ChatActivity extends AppCompatActivity {
                             }
                             handleModerationOutcome(status, "", type, fileUrl);
                         } catch (Exception e) {
-                            Log.e("UPLOAD_MEDIA", "❌ Lỗi parse: " + e.getMessage());
+                            Log.e("UPLOAD_MEDIA", "Lỗi parse: " + e.getMessage());
                             Toast.makeText(this, "Upload lỗi", Toast.LENGTH_SHORT).show();
                         }
                     },
                     error -> {
-                        Log.e("UPLOAD_MEDIA", "❌ Lỗi: " + error.toString());
+                        Log.e("UPLOAD_MEDIA", "Lỗi: " + error.toString());
                         if (error.networkResponse != null && error.networkResponse.statusCode == 403) {
                             showBannedDialog();
                         } else if (error.networkResponse != null && error.networkResponse.data != null) {
@@ -895,7 +895,7 @@ public class ChatActivity extends AppCompatActivity {
 
             Volley.newRequestQueue(this).add(req);
         } catch (Exception e) {
-            Log.e("UPLOAD_MEDIA", "❌ " + e.getMessage(), e);
+            Log.e("UPLOAD_MEDIA", "lỗi " + e.getMessage(), e);
             Toast.makeText(this, "Upload lỗi", Toast.LENGTH_SHORT).show();
         }
     }
@@ -930,7 +930,7 @@ public class ChatActivity extends AppCompatActivity {
                 return buffer.toByteArray();
             }
         } catch (Exception e) {
-            Log.e("READ_URI", "❌ " + e.getMessage());
+            Log.e("READ_URI", "lỗi " + e.getMessage());
             return null;
         }
     }
