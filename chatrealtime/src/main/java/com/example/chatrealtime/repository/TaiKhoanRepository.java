@@ -8,8 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 
 import com.example.chatrealtime.entity.TaiKhoan;
 
-// Cái này thay cho SELECT * FROM TAIKHOAN WHERE email = ?
 public interface TaiKhoanRepository extends JpaRepository<TaiKhoan, Integer> {
+    //cai nay se thay cho cau lenh SQL: SELECT * FROM TAIKHOAN WHERE email = ?
     Optional<TaiKhoan> findByEmail(String email);
 
     @Query("""
