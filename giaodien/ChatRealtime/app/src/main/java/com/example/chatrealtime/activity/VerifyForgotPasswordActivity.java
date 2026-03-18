@@ -34,7 +34,8 @@ import java.util.Map;
 public class VerifyForgotPasswordActivity extends AppCompatActivity {
 
     private static final String TAG = "VerifyForgotPwd";
-    private static final int VERIFY_TIMEOUT_MS = 20000;
+    private static final int OTP_REQUEST_TIMEOUT_MS = 15000;
+    private static final int OTP_VERIFY_TIMEOUT_MS = 25000;
 
     private EditText[] otpInputs;
     private Button btnVerify;
@@ -182,13 +183,13 @@ public class VerifyForgotPasswordActivity extends AppCompatActivity {
 
         // Tranh gui lai request confirm OTP tu dong khi server phan hoi cham.
         request.setRetryPolicy(new DefaultRetryPolicy(
-                VERIFY_TIMEOUT_MS,
+            OTP_VERIFY_TIMEOUT_MS,
                 0,
                 DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
         ));
         request.setShouldRetryServerErrors(false);
         request.setShouldCache(false);
-        Log.d(TAG, "xacNhanQuenMatKhau: retryPolicy timeoutMs=" + VERIFY_TIMEOUT_MS + ", maxRetries=0");
+        Log.d(TAG, "xacNhanQuenMatKhau: retryPolicy timeoutMs=" + OTP_VERIFY_TIMEOUT_MS + ", maxRetries=0");
 
         Volley.newRequestQueue(this).add(request);
     }
@@ -221,6 +222,14 @@ public class VerifyForgotPasswordActivity extends AppCompatActivity {
                 return params;
             }
         };
+
+        request.setRetryPolicy(new DefaultRetryPolicy(
+            OTP_REQUEST_TIMEOUT_MS,
+            0,
+            DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
+        ));
+        request.setShouldRetryServerErrors(false);
+        request.setShouldCache(false);
 
         Volley.newRequestQueue(this).add(request);
     }

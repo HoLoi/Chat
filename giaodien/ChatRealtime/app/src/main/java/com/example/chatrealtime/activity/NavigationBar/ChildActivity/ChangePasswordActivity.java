@@ -17,6 +17,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.android.volley.Request;
+import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.chatrealtime.Constants;
@@ -29,6 +30,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ChangePasswordActivity extends AppCompatActivity {
+
+    private static final int OTP_REQUEST_TIMEOUT_MS = 15000;
 
     EditText edtOldPassword, edtNewPassword, edtConfirmNewPassword;
     Button btnChangePassword;
@@ -116,6 +119,14 @@ public class ChangePasswordActivity extends AppCompatActivity {
                 return params;
             }
         };
+
+        request.setRetryPolicy(new DefaultRetryPolicy(
+            OTP_REQUEST_TIMEOUT_MS,
+            0,
+            DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
+        ));
+        request.setShouldRetryServerErrors(false);
+        request.setShouldCache(false);
 
         Volley.newRequestQueue(ChangePasswordActivity.this).add(request);
     }

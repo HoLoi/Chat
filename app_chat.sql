@@ -1,6 +1,6 @@
 -- app_chat.sql
-CREATE DATABASE IF NOT EXISTS app_chat CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE app_chat;
+CREATE DATABASE IF NOT EXISTS app_chat3 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE app_chat3;
 
 -- NGUOIDUNG1
 CREATE TABLE IF NOT EXISTS NGUOIDUNG (

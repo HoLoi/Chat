@@ -270,6 +270,8 @@ import java.util.Map;
 
 public class SignupActivity extends AppCompatActivity {
 
+    private static final int OTP_REQUEST_TIMEOUT_MS = 15000;
+
     private TextView tv_dangnhap;
     private TextInputEditText edtEmail, edtPassword, edtConfirmPassword;
     private TextInputLayout layoutEmail, layoutPassword, layoutConfirmPassword;
@@ -349,10 +351,12 @@ public class SignupActivity extends AppCompatActivity {
                 };
 
                 request.setRetryPolicy(new DefaultRetryPolicy(
-                        5000,
+                    OTP_REQUEST_TIMEOUT_MS,
                         0,
                         DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
                 ));
+                request.setShouldRetryServerErrors(false);
+                request.setShouldCache(false);
 
                 queue.add(request);
             }

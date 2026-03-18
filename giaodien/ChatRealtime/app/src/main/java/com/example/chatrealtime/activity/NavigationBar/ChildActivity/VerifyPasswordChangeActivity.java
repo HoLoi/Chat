@@ -19,6 +19,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.android.volley.Request;
+import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
@@ -33,6 +34,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class VerifyPasswordChangeActivity extends AppCompatActivity {
+
+    private static final int OTP_REQUEST_TIMEOUT_MS = 15000;
+    private static final int OTP_VERIFY_TIMEOUT_MS = 25000;
 
     EditText[] otpInputs;
     Button btnVerify;
@@ -162,6 +166,14 @@ public class VerifyPasswordChangeActivity extends AppCompatActivity {
             }
         };
 
+        request.setRetryPolicy(new DefaultRetryPolicy(
+            OTP_VERIFY_TIMEOUT_MS,
+            0,
+            DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
+        ));
+        request.setShouldRetryServerErrors(false);
+        request.setShouldCache(false);
+
         queue.add(request);
     }
 
@@ -192,6 +204,14 @@ public class VerifyPasswordChangeActivity extends AppCompatActivity {
                 return params;
             }
         };
+
+        request.setRetryPolicy(new DefaultRetryPolicy(
+            OTP_REQUEST_TIMEOUT_MS,
+            0,
+            DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
+        ));
+        request.setShouldRetryServerErrors(false);
+        request.setShouldCache(false);
 
         Volley.newRequestQueue(VerifyPasswordChangeActivity.this).add(request);
     }
