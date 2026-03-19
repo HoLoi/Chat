@@ -328,6 +328,7 @@ Moderation AI sẽ lắng nghe tại `http://localhost:5000`:
     - `utils.py` – `ModelRegistry`, logic map `score` → action.
   - `train.py` – script sinh dataset và huấn luyện/ lưu model.
   - `saved_model/` – chứa `vectorizer.pkl`, `model.pkl` sau khi train.
+  - `data/` – chứa `dev.csv`, `test.csv`, `train.csv` là dữ liệu để train AI.
 
 - `giaodien/ChatRealtime/` – Ứng dụng Android
   - `settings.gradle.kts`, `build.gradle.kts` – cấu hình toàn project.

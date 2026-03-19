@@ -17,6 +17,9 @@
         android:theme="@style/Theme.ChatRealtime"
         android:usesCleartextTraffic="true">
         <activity
+            android:name=".activity.NavigationBar.ChildActivity.activity_terms_policy"
+            android:exported="false" />
+        <activity
             android:name=".activity.VerifyForgotPasswordActivity"
             android:exported="false" />
         <activity

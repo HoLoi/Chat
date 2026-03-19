@@ -1,6 +1,7 @@
 package com.example.chatrealtime.activity.NavigationBar;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -20,6 +21,7 @@ import com.bumptech.glide.Glide;
 import com.example.chatrealtime.Constants;
 import com.example.chatrealtime.R;
 import com.example.chatrealtime.activity.NavigationBar.ChildActivity.ChangePasswordActivity;
+import com.example.chatrealtime.activity.NavigationBar.ChildActivity.activity_terms_policy;
 import com.example.chatrealtime.model.SessionManager;
 import com.example.chatrealtime.activity.NavigationBar.ChildActivity.InformationActivity;
 import com.example.chatrealtime.activity.SigninActivity;
@@ -32,7 +34,7 @@ import java.util.Map;
 
 public class ProfileFragment extends Fragment {
     ShapeableImageView avatarImage;
-    Button btnThongTin, btnDoiMatKhau, btnDangXuat;
+    Button btnThongTin, btnDoiMatKhau, btnFeedback, btnTermsPolicy, btnDangXuat;
     TextView txtTenUser;
     SessionManager sessionManager;
     int maTaiKhoan;
@@ -50,6 +52,8 @@ public class ProfileFragment extends Fragment {
         btnDangXuat = view.findViewById(R.id.btnDangXuat);
         avatarImage = view.findViewById(R.id.avatarImage);
         txtTenUser = view.findViewById(R.id.tv_tenUser);
+        btnFeedback = view.findViewById(R.id.btn_feedback);
+        btnTermsPolicy = view.findViewById(R.id.btn_terms_policy);
 
         sessionManager = new SessionManager(getContext());
         String email = sessionManager.getEmail();
@@ -72,6 +76,22 @@ public class ProfileFragment extends Fragment {
                 Intent intent = new Intent(getActivity(), ChangePasswordActivity.class);
                 startActivity(intent);
             }
+        });
+
+        btnTermsPolicy.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(getActivity(), activity_terms_policy.class);
+                startActivity(intent);
+            }
+        });
+
+        btnFeedback.setOnClickListener(v -> {
+            String url = "https://docs.google.com/forms/d/e/1FAIpQLScnP3ok82WK8CcxPLOVw5kU-5Nxa6oGQcPVSu4QQo550ECjAg/viewform";
+
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setData(Uri.parse(url));
+            startActivity(intent);
         });
 
         btnDangXuat.setOnClickListener(new View.OnClickListener() {

@@ -428,7 +428,6 @@ public class ChatActivity extends AppCompatActivity {
             case WARNING:
                 appendMessageToUi(noiDung, loaiTinNhan, duongDanFile, status);
                 Toast.makeText(this, "Tin nhắn có nội dung nhạy cảm", Toast.LENGTH_SHORT).show();
-                sendRealtime(noiDung, loaiTinNhan, duongDanFile);
                 break;
             case CLEAN:
             default:
@@ -726,6 +725,12 @@ public class ChatActivity extends AppCompatActivity {
 
                 Log.d("WS_NEW_MSG", "Tin nhắn realtime: " + noiDung + " | Từ: " + maGui);
 
+                Message last = adapter.getLastMessage();
+                if (isSameMessage(last, maGui, noiDung, loaiTinNhan, fileUrl)) {
+                    Log.d("WS_SKIP", "⏭ Bỏ qua tin nhắn realtime trùng lặp.");
+                    return;
+                }
+
                 adapter.addMessage(new Message(null, noiDung, isMine, maGui, maTaiKhoan, loaiTinNhan, fileUrl, thoiGianGui, "sent", avatar, tenNguoiGui, MessageModerationStatus.CLEAN));
                 recyclerMessages.scrollToPosition(adapter.getItemCount() - 1);
 
@@ -739,6 +744,24 @@ public class ChatActivity extends AppCompatActivity {
                 Log.e("WS_MSG_ERR", "Lỗi nhận tin realtime: " + e.getMessage());
             }
         };
+    }
+
+    private boolean isSameMessage(Message last, int maGui, String noiDung, String loaiTinNhan, String fileUrl) {
+        if (last == null) {
+            return false;
+        }
+        if (last.getMaNguoiGui() != maGui) {
+            return false;
+        }
+        String lastNoiDung = last.getNoiDung() != null ? last.getNoiDung() : "";
+        String lastLoai = last.getLoaiTinNhan() != null ? last.getLoaiTinNhan() : "text";
+        String lastFile = last.getDuongDanFile() != null ? last.getDuongDanFile() : "";
+        String curNoiDung = noiDung != null ? noiDung : "";
+        String curLoai = loaiTinNhan != null ? loaiTinNhan : "text";
+        String curFile = fileUrl != null ? fileUrl : "";
+        return lastNoiDung.equals(curNoiDung)
+                && lastLoai.equalsIgnoreCase(curLoai)
+                && lastFile.equals(curFile);
     }
 
     /**

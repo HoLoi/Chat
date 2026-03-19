@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -77,7 +78,24 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
         holder.txtMessage.setVisibility(View.VISIBLE);
 
         int warningColor = ContextCompat.getColor(context, R.color.warning_soft_yellow);
-        holder.txtMessage.setBackgroundColor(moderationStatus == MessageModerationStatus.WARNING ? warningColor : Color.TRANSPARENT);
+        boolean isWarning = moderationStatus == MessageModerationStatus.WARNING;
+        if (holder.messageBubble != null) {
+            if (isWarning) {
+                holder.messageBubble.setBackgroundColor(warningColor);
+            } else {
+                holder.messageBubble.setBackgroundResource(isMine ? R.drawable.bg_message_sent : R.drawable.bg_message_received);
+            }
+        }
+
+        int normalMessageTextColor = isMine ? Color.WHITE : Color.parseColor("#222222");
+        int normalTimestampColor = isMine ? Color.parseColor("#E3E7ED") : Color.parseColor("#9AA0A6");
+        int warningMetaColor = Color.parseColor("#6B7280");
+
+        holder.txtMessage.setTextColor(isWarning ? Color.parseColor("#222222") : normalMessageTextColor);
+        holder.txtTimestamp.setTextColor(isWarning ? warningMetaColor : normalTimestampColor);
+        if (holder.txtStatus != null) {
+            holder.txtStatus.setTextColor(isWarning ? warningMetaColor : normalTimestampColor);
+        }
 
         String displayText = msg.getNoiDung() != null ? msg.getNoiDung() : "";
 
@@ -162,10 +180,18 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
         notifyDataSetChanged();
     }
 
+    public Message getLastMessage() {
+        if (messageList == null || messageList.isEmpty()) {
+            return null;
+        }
+        return messageList.get(messageList.size() - 1);
+    }
+
     public static class MessageViewHolder extends RecyclerView.ViewHolder {
         TextView txtMessage;
         ImageView imgMedia;
         FrameLayout mediaContainer;
+        LinearLayout messageBubble;
         TextView avatarView;
         TextView txtTimestamp;
         TextView txtStatus;
@@ -174,6 +200,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
             txtMessage = itemView.findViewById(R.id.txtMessage);
             imgMedia = itemView.findViewById(R.id.imgMedia);
             mediaContainer = itemView.findViewById(R.id.mediaContainer);
+            messageBubble = itemView.findViewById(R.id.messageBubble);
             avatarView = itemView.findViewById(R.id.avatarView);
             txtTimestamp = itemView.findViewById(R.id.txtTimestamp);
             txtStatus = itemView.findViewById(R.id.txtStatus);
@@ -331,7 +358,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
     }
 
     private void showMediaActions(String url, String mimeHint) {
-        String[] items = new String[]{"Xem", "Tải về", "Sao chép link"};
+        String[] items = new String[]{"Xem", "Tải về"};
         new AlertDialog.Builder(context)
                 .setItems(items, (dialog, which) -> {
                     switch (which) {
@@ -340,9 +367,6 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                             break;
                         case 1:
                             download(url);
-                            break;
-                        case 2:
-                            copyLink(url);
                             break;
                         default:
                             break;
@@ -359,15 +383,6 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
             req.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
             req.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, Uri.parse(url).getLastPathSegment());
             dm.enqueue(req);
-        } catch (Exception ignored) {}
-    }
-
-    private void copyLink(String url) {
-        try {
-            android.content.ClipboardManager cm = (android.content.ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
-            if (cm != null) {
-                cm.setPrimaryClip(android.content.ClipData.newPlainText("media", url));
-            }
         } catch (Exception ignored) {}
     }
 }

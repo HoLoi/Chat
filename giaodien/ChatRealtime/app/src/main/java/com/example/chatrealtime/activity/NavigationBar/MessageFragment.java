@@ -157,11 +157,12 @@ public class MessageFragment extends Fragment {
                     // Xóa phòng chat
                     confirmAndDeleteRoom(room);
                     return true;
-                } else if (itemId == R.id.action_unfriend) {
-                    // Hủy kết bạn với người trong phòng 1-1
-                    //confirmAndUnfriend(room);
-                    return true;
                 }
+//                else if (itemId == R.id.action_unfriend) {
+//                    // Hủy kết bạn với người trong phòng 1-1
+//                    //confirmAndUnfriend(room);
+//                    return true;
+//                }
                 return false;
             });
 
