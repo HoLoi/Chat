@@ -90,9 +90,10 @@ public class ChangePasswordActivity extends AppCompatActivity {
                 JSONObject jsonObject = new JSONObject(response);
                 String status = jsonObject.optString("status", "error");
                 String message = jsonObject.optString("message", "Có lỗi xảy ra");
+                String normalizedMessage = com.example.chatrealtime.network.ServerMessageDecoder.normalize(message);
 
                 if ("success".equals(status)) {
-                    Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, normalizedMessage, Toast.LENGTH_SHORT).show();
                     Intent intent = new Intent(ChangePasswordActivity.this, VerifyPasswordChangeActivity.class);
                     intent.putExtra("email", email);
                     intent.putExtra("oldPassword", oldPassword);
@@ -100,7 +101,7 @@ public class ChangePasswordActivity extends AppCompatActivity {
                     startActivity(intent);
                     btnChangePassword.setEnabled(true);
                 } else {
-                    Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, normalizedMessage, Toast.LENGTH_SHORT).show();
                     btnChangePassword.setEnabled(true);
                 }
             } catch (Exception e) {

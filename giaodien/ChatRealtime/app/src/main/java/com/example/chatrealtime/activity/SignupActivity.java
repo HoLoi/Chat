@@ -321,7 +321,9 @@ public class SignupActivity extends AppCompatActivity {
 
                             try {
                                 JSONObject obj = new JSONObject(response);
-                                Toast.makeText(this, obj.getString("message"), Toast.LENGTH_SHORT).show();
+                                //Toast.makeText(this, obj.getString("message"), Toast.LENGTH_SHORT).show();
+                                Toast.makeText(this, com.example.chatrealtime.network.ServerMessageDecoder.normalize(obj.getString("message")),
+                                        Toast.LENGTH_SHORT).show();
 
                                 if ("success".equals(obj.getString("status"))) {
                                     Intent intent = new Intent(this, SignupVerifyActivity.class);

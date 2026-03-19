@@ -90,7 +90,9 @@ public class ForgotPasswordActivity extends AppCompatActivity {
                     try {
                         JSONObject obj = new JSONObject(response);
                         if ("success".equals(obj.optString("status"))) {
-                            Toast.makeText(this, obj.optString("message", "Da gui OTP"), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this,
+                                    com.example.chatrealtime.network.ServerMessageDecoder.normalize(obj.optString("message", "Da gui OTP")),
+                                    Toast.LENGTH_SHORT).show();
                             Intent intent = new Intent(this, VerifyForgotPasswordActivity.class);
                             intent.putExtra("email", email);
                             startActivity(intent);

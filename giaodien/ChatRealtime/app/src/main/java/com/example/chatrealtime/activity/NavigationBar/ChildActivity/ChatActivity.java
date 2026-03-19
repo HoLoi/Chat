@@ -357,13 +357,15 @@ public class ChatActivity extends AppCompatActivity {
                         showBannedDialog();
                     } else if (error.networkResponse != null && error.networkResponse.data != null) {
                         try {
-                            String body = new String(error.networkResponse.data);
+                            String body = new String(error.networkResponse.data, java.nio.charset.StandardCharsets.UTF_8);
                             JSONObject obj = new JSONObject(body.trim());
                             MessageModerationStatus status = MessageModerationStatus.from(obj.optString("status"));
                             if (status == MessageModerationStatus.BLOCK) {
                                 showBlockDialog();
                             } else {
-                                Toast.makeText(this, obj.optString("message", "Gửi tin nhắn thất bại"), Toast.LENGTH_SHORT).show();
+                                Toast.makeText(this,
+                                        com.example.chatrealtime.network.ServerMessageDecoder.normalize(obj.optString("message", "Gửi tin nhắn thất bại")),
+                                        Toast.LENGTH_SHORT).show();
                             }
                         } catch (Exception ex) {
                             Toast.makeText(this, "Gửi tin nhắn thất bại", Toast.LENGTH_SHORT).show();
@@ -854,13 +856,15 @@ public class ChatActivity extends AppCompatActivity {
                             showBannedDialog();
                         } else if (error.networkResponse != null && error.networkResponse.data != null) {
                             try {
-                                String body = new String(error.networkResponse.data);
+                                String body = new String(error.networkResponse.data, java.nio.charset.StandardCharsets.UTF_8);
                                 JSONObject obj = new JSONObject(body.trim());
                                 MessageModerationStatus status = MessageModerationStatus.from(obj.optString("status"));
                                 if (status == MessageModerationStatus.BLOCK) {
                                     showBlockDialog();
                                 } else {
-                                    Toast.makeText(this, obj.optString("message", "Upload thất bại"), Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(this,
+                                            com.example.chatrealtime.network.ServerMessageDecoder.normalize(obj.optString("message", "Upload thất bại")),
+                                            Toast.LENGTH_SHORT).show();
                                 }
                             } catch (Exception ex) {
                                 Toast.makeText(this, "Upload thất bại", Toast.LENGTH_SHORT).show();

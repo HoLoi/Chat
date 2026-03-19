@@ -70,7 +70,7 @@ public class VerifyForgotPasswordActivity extends AppCompatActivity {
 
         email = getIntent().getStringExtra("email");
         if (email == null || email.trim().isEmpty()) {
-            Toast.makeText(this, "Khong tim thay email", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Không tìm thấy email", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
@@ -155,7 +155,8 @@ public class VerifyForgotPasswordActivity extends AppCompatActivity {
                                     })
                                     .show();
                         } else {
-                            Toast.makeText(this, obj.optString("message", "OTP khong dung"), Toast.LENGTH_SHORT).show();
+                            //Toast.makeText(this, obj.optString("message", "OTP khong dung"), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this, "OTP khong dung", Toast.LENGTH_SHORT).show();
                         }
                     } catch (Exception e) {
                         Log.e(TAG, "xacNhanQuenMatKhau: parse response failed", e);
@@ -203,7 +204,9 @@ public class VerifyForgotPasswordActivity extends AppCompatActivity {
                     Log.d(TAG, "guiLaiOtp: rawResponse=" + response);
                     try {
                         JSONObject obj = new JSONObject(response);
-                        Toast.makeText(this, obj.optString("message", "Da gui lai OTP"), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this,
+                                com.example.chatrealtime.network.ServerMessageDecoder.normalize(obj.optString("message", "Da gui lai OTP")),
+                                Toast.LENGTH_SHORT).show();
                     } catch (Exception e) {
                         Log.e(TAG, "guiLaiOtp: parse response failed", e);
                         Toast.makeText(this, "Loi xu ly phan hoi", Toast.LENGTH_SHORT).show();

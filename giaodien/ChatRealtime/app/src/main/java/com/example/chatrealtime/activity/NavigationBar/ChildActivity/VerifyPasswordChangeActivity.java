@@ -140,7 +140,9 @@ public class VerifyPasswordChangeActivity extends AppCompatActivity {
                                     .show();
 
                         } else {
-                            Toast.makeText(this, obj.getString("message"), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this,
+                                    com.example.chatrealtime.network.ServerMessageDecoder.normalize(obj.getString("message")),
+                                    Toast.LENGTH_SHORT).show();
                         }
 
                     } catch (Exception e) {
@@ -189,7 +191,9 @@ public class VerifyPasswordChangeActivity extends AppCompatActivity {
                 response -> {
                     try {
                         JSONObject obj = new JSONObject(response);
-                        Toast.makeText(this, obj.optString("message", "Đã gửi lại OTP"), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this,
+                                com.example.chatrealtime.network.ServerMessageDecoder.normalize(obj.optString("message", "Đã gửi lại OTP")),
+                                Toast.LENGTH_SHORT).show();
                     } catch (Exception e) {
                         Toast.makeText(this, "Lỗi xử lý phản hồi", Toast.LENGTH_SHORT).show();
                     }
@@ -238,7 +242,9 @@ public class VerifyPasswordChangeActivity extends AppCompatActivity {
                             startActivity(intent);
                             Toast.makeText(VerifyPasswordChangeActivity.this, "Đăng xuất thành công", Toast.LENGTH_SHORT).show();
                         } else {
-                            Toast.makeText(VerifyPasswordChangeActivity.this, "Lỗi: " + json.getString("message"), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(VerifyPasswordChangeActivity.this,
+                                    "Lỗi: " + com.example.chatrealtime.network.ServerMessageDecoder.normalize(json.getString("message")),
+                                    Toast.LENGTH_SHORT).show();
                         }
                     } catch (Exception e) {
                         Toast.makeText(VerifyPasswordChangeActivity.this, "Lỗi xử lý phản hồi", Toast.LENGTH_SHORT).show();

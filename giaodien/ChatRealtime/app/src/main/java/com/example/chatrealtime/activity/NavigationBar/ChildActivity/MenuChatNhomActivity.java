@@ -350,7 +350,9 @@ public class MenuChatNhomActivity extends AppCompatActivity {
                         Log.d(TAG, "fetchMembersFromServer response status=" + status + ", body=" + res);
                         if (!"success".equals(status)) {
                             if (showAfterLoad) {
-                                Toast.makeText(this, res.optString("message", "Không tải được danh sách thành viên"), Toast.LENGTH_SHORT).show();
+                                Toast.makeText(this,
+                                        com.example.chatrealtime.network.ServerMessageDecoder.normalize(res.optString("message", "Không tải được danh sách thành viên")),
+                                        Toast.LENGTH_SHORT).show();
                             }
                             return;
                         }
@@ -617,7 +619,9 @@ public class MenuChatNhomActivity extends AppCompatActivity {
                         JSONObject obj = new JSONObject(resp);
                         String status = obj.optString("status", "success");
                         String message = obj.optString("message", "Đã xử lý");
-                        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this,
+                                com.example.chatrealtime.network.ServerMessageDecoder.normalize(message),
+                                Toast.LENGTH_SHORT).show();
                         if (!"pending".equalsIgnoreCase(status)) {
                             loadRoomInfo();
                         }
@@ -669,7 +673,9 @@ public class MenuChatNhomActivity extends AppCompatActivity {
                 res -> {
                     try {
                         if (!"success".equals(res.optString("status"))) {
-                            Toast.makeText(this, res.optString("message", "Không có quyền xem yêu cầu"), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this,
+                                    com.example.chatrealtime.network.ServerMessageDecoder.normalize(res.optString("message", "Không có quyền xem yêu cầu")),
+                                    Toast.LENGTH_SHORT).show();
                             return;
                         }
                         JSONArray arr = res.optJSONArray("requests");

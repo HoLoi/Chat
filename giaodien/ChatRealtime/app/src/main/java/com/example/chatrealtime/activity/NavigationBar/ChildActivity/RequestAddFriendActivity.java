@@ -155,7 +155,9 @@ public class RequestAddFriendActivity extends AppCompatActivity {
 
                         requestList.add(0, new FriendRequest(fromUserId, tenNguoiGui, email, avatar));
                         adapter.notifyDataSetChanged();
-                        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this,
+                            com.example.chatrealtime.network.ServerMessageDecoder.normalize(message),
+                            Toast.LENGTH_SHORT).show();
 
                     } catch (Exception e) {
                         e.printStackTrace();

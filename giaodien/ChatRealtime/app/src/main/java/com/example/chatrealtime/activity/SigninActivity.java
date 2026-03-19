@@ -217,12 +217,14 @@ public class SigninActivity extends AppCompatActivity {
                                 intent = new Intent(this, TrangChuActivity.class);
                             }
 
+                            // Quan trọng: xóa tất cả activity cũ để không thể back về login sau khi đã vào trang chủ
+                            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                             startActivity(intent);
-                            finish();
 
                         } else {
-                            tilMatKhau.setError(obj.getString("message"));
-                            Toast.makeText(this, obj.getString("message"), Toast.LENGTH_SHORT).show();
+                            String serverMessage = com.example.chatrealtime.network.ServerMessageDecoder.normalize(obj.getString("message"));
+                            tilMatKhau.setError(serverMessage);
+                            Toast.makeText(this, serverMessage, Toast.LENGTH_SHORT).show();
                         }
 
                     } catch (Exception e) {
@@ -248,6 +250,7 @@ public class SigninActivity extends AppCompatActivity {
     }
 
     private void layVaGuiFcmToken(int maTaiKhoan) {
+        //
         FirebaseMessaging.getInstance().getToken()
                 .addOnSuccessListener(token -> {
                     Log.d("FCM_TOKEN", token);

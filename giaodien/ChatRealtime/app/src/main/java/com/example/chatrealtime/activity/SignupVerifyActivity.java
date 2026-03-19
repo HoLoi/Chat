@@ -129,7 +129,9 @@ public class SignupVerifyActivity extends AppCompatActivity {
                                     })
                                     .show();
                         } else {
-                            Toast.makeText(this, obj.getString("message"), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this,
+                                    com.example.chatrealtime.network.ServerMessageDecoder.normalize(obj.getString("message")),
+                                    Toast.LENGTH_SHORT).show();
                         }
 
                     } catch (Exception e) {

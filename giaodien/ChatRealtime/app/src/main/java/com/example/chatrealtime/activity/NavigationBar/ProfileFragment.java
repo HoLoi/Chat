@@ -131,7 +131,7 @@ public class ProfileFragment extends Fragment {
                                     Toast.makeText(getContext(), "Đăng xuất thành công", Toast.LENGTH_SHORT).show();
                                 } else {
                                     Toast.makeText(getContext(),
-                                            json.optString("message"),
+                                            com.example.chatrealtime.network.ServerMessageDecoder.normalize(json.optString("message")),
                                             Toast.LENGTH_SHORT).show();
                                 }
                             } catch (Exception e) {
@@ -216,7 +216,7 @@ public class ProfileFragment extends Fragment {
 
                         if (!"success".equals(json.optString("status"))) {
                             Toast.makeText(getContext(),
-                                    json.optString("message"),
+                                    com.example.chatrealtime.network.ServerMessageDecoder.normalize(json.optString("message")),
                                     Toast.LENGTH_SHORT).show();
                             return;
                         }

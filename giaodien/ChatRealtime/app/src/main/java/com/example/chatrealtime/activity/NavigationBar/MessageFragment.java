@@ -298,7 +298,9 @@ public class MessageFragment extends Fragment {
 
                             Toast.makeText(requireContext(), "Đã xóa cuộc trò chuyện", Toast.LENGTH_SHORT).show();
                         } else {
-                            Toast.makeText(requireContext(), "Lỗi: " + jsonObject.getString("message"), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(requireContext(),
+                                    "Lỗi: " + com.example.chatrealtime.network.ServerMessageDecoder.normalize(jsonObject.getString("message")),
+                                    Toast.LENGTH_SHORT).show();
                         }
                     } catch (Exception e) {
                         Log.e(TAG, "Lỗi parse JSON xóa phòng: " + e.getMessage());
@@ -424,7 +426,7 @@ public class MessageFragment extends Fragment {
                             dbHelper.saveRooms(roomList);
                         } else {
                             Toast.makeText(requireContext(),
-                                    response.optString("message", "Lỗi tải danh sách phòng"),
+                                    com.example.chatrealtime.network.ServerMessageDecoder.normalize(response.optString("message", "Lỗi tải danh sách phòng")),
                                     Toast.LENGTH_SHORT).show();
                         }
                     } catch (Exception e) {

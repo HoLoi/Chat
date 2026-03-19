@@ -84,7 +84,7 @@ public class AuthController {
 
 
     @PostMapping("/register")
-    public Map<String, Object> register(@RequestParam String email) {
+    public Map<String, Object> register(@RequestParam String email) throws Exception{
         Map<String, Object> res = new HashMap<>();
 
         if (repo.findByEmail(email).isPresent()) {
@@ -134,7 +134,7 @@ public class AuthController {
     public Map<String, Object> requestChangePassword(
             @RequestParam String email,
             @RequestParam String oldPassword
-    ) {
+    ) throws Exception{
         Map<String, Object> res = new HashMap<>();
 
         Optional<TaiKhoan> opt = repo.findByEmail(email);
@@ -200,7 +200,7 @@ public class AuthController {
     }
 
     @PostMapping("/request-forgot-password")
-    public Map<String, Object> requestForgotPassword(@RequestParam String email) {
+    public Map<String, Object> requestForgotPassword(@RequestParam String email) throws Exception {
         Map<String, Object> res = new HashMap<>();
         String normalizedEmail = email == null ? "" : email.trim().toLowerCase();
         log.info("[FORGOT][REQUEST] email={}", normalizedEmail);
@@ -229,7 +229,7 @@ public class AuthController {
     public Map<String, Object> confirmForgotPassword(
             @RequestParam String email,
             @RequestParam String otp
-    ) {
+    ) throws Exception{
         Map<String, Object> res = new HashMap<>();
         String normalizedEmail = email == null ? "" : email.trim().toLowerCase();
         String otpForLog = otp == null ? "null" : "len=" + otp.trim().length();

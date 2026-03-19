@@ -238,7 +238,7 @@ public class MenuChatActivity extends AppCompatActivity {
                             navigateToMessageScreen();
                         } else {
                             Toast.makeText(this,
-                                    "Lỗi: " + jsonObject.optString("message", "Không thể xóa"),
+                                    "Lỗi: " + com.example.chatrealtime.network.ServerMessageDecoder.normalize(jsonObject.optString("message", "Không thể xóa")),
                                     Toast.LENGTH_SHORT).show();
                         }
                     } catch (Exception e) {

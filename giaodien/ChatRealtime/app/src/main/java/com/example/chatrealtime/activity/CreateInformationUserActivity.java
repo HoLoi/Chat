@@ -316,8 +316,12 @@ public class CreateInformationUserActivity extends AppCompatActivity {
                             Toast.makeText(this, " Tạo thông tin thành công", Toast.LENGTH_SHORT).show();
 
                             updateStatus("online");
-                            startActivity(new Intent(this, TrangChuActivity.class));
-                            finish();
+//                            startActivity(new Intent(this, TrangChuActivity.class));
+//                            finish();
+                            Intent intent;
+                            intent = new Intent(this, TrangChuActivity.class);
+                            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(intent);
                         } else {
                             Toast.makeText(this,
                                     json.optString("message", "Tạo thông tin thất bại"),

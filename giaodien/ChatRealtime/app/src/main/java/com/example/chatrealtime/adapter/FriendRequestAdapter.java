@@ -85,7 +85,9 @@ public class FriendRequestAdapter extends ArrayAdapter<FriendRequest> {
                         String status = respJson.getString("status");
                         String message = respJson.getString("message");
 
-                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+                        Toast.makeText(context,
+                            com.example.chatrealtime.network.ServerMessageDecoder.normalize(message),
+                            Toast.LENGTH_SHORT).show();
 
                         if (status.equals("success")) {
                             list.remove(position);
