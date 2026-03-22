@@ -13,6 +13,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.graphics.Insets;
@@ -23,6 +24,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.android.volley.Request;
+import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
@@ -77,13 +79,14 @@ public class ChatActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_chat);
         Log.d("CHAT_OPEN", "Extras chatId=" + getIntent().getStringExtra("chatId") + " maPhong=" + getIntent().getIntExtra("maPhong", -1) + " maPhongChat=" + getIntent().getIntExtra("maPhongChat", -1) + " roomName=" + getIntent().getStringExtra("roomName"));
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+        // ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+        //     Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+        //     v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+        //     return insets;
+        // });
 
         initViews();
         initSession();
@@ -919,6 +922,14 @@ public class ChatActivity extends AppCompatActivity {
                     return params;
                 }
             };
+
+            // File lớn cần timeout dài hơn và không retry để tránh upload lặp gây gửi 2 lần.
+            req.setRetryPolicy(new DefaultRetryPolicy(
+                    90_000,
+                    0,
+                    1.0f
+            ));
+            req.setShouldCache(false);
 
             Volley.newRequestQueue(this).add(req);
         } catch (Exception e) {

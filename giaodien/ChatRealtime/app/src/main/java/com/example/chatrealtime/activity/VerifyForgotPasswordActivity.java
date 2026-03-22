@@ -144,8 +144,8 @@ public class VerifyForgotPasswordActivity extends AppCompatActivity {
 
                         if ("success".equals(status)) {
                             new AlertDialog.Builder(this)
-                                    .setTitle("Thanh cong")
-                                    .setMessage(obj.optString("message", "Mat khau moi da duoc gui qua email"))
+                                    .setTitle("Thành công")
+                                    .setMessage("Mật khẩu mới đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư và đăng nhập lại.")
                                     .setCancelable(false)
                                     .setPositiveButton("OK", (dialog, which) -> {
                                         Intent intent = new Intent(this, SigninActivity.class);

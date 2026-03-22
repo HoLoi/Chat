@@ -8,6 +8,7 @@ import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Environment;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -363,7 +364,11 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                 .setItems(items, (dialog, which) -> {
                     switch (which) {
                         case 0:
-                            openMedia(url, mimeHint);
+                            if (mimeHint != null && mimeHint.startsWith("image")) {
+                                showImagePreview(url);
+                            } else {
+                                openMedia(url, mimeHint);
+                            }
                             break;
                         case 1:
                             download(url);
@@ -373,6 +378,45 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                     }
                 })
                 .show();
+    }
+
+    private void showImagePreview(String url) {
+        try {
+            ImageView imageView = new ImageView(context);
+            imageView.setLayoutParams(new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+            ));
+            imageView.setAdjustViewBounds(true);
+            imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            imageView.setBackgroundColor(Color.BLACK);
+            imageView.setPadding(24, 24, 24, 24);
+
+            Glide.with(context)
+                    .load(url)
+                    .placeholder(R.drawable.ic_launcher_foreground)
+                    .error(R.drawable.ic_launcher_foreground)
+                    .into(imageView);
+
+            AlertDialog dialog = new AlertDialog.Builder(context)
+                    .setView(imageView)
+                    .create();
+
+            dialog.setOnShowListener(d -> {
+                if (dialog.getWindow() != null) {
+                    dialog.getWindow().setGravity(Gravity.CENTER);
+                    dialog.getWindow().setLayout(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT
+                    );
+                }
+            });
+
+            imageView.setOnClickListener(v -> dialog.dismiss());
+            dialog.show();
+        } catch (Exception e) {
+            openMedia(url, "image/*");
+        }
     }
 
     private void download(String url) {

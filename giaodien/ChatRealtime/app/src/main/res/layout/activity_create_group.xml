@@ -64,7 +64,8 @@
             android:paddingEnd="12dp"
             android:textSize="15sp"
             android:maxLength="50"
-            android:maxLines="1"/>
+            android:maxLines="1"
+            android:singleLine="true"/>
 
         <!-- privacy -->
         <LinearLayout

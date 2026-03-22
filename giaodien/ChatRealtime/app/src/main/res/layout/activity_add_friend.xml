@@ -78,7 +78,8 @@
                 android:paddingEnd="14dp"
                 android:background="@drawable/bg_input_addfriend"
                 android:maxLength="50"
-                android:maxLines="1"/>
+                android:maxLines="1"
+                android:singleLine="true"/>
 
             <Button
                 android:id="@+id/btnGuiketban"

@@ -73,7 +73,8 @@
                 android:textSize="16sp"
                 android:hint="Nhập họ tên"
                 android:maxLength="50"
-                android:maxLines="1"/>
+                android:maxLines="1"
+                android:singleLine="true"/>
         </LinearLayout>
 
 

@@ -582,7 +582,7 @@ public class MenuChatNhomActivity extends AppCompatActivity {
                 TextView tv = v.findViewById(R.id.tvName);
 
                 int id = f.optInt("maTaiKhoan", f.optInt("maNguoiDung"));
-                String name = f.optString("hoTen", "Bạn bè") + " (" + id + ")";
+                String name = f.optString("hoTen", "Bạn bè");
                 tv.setText(name);
 
                 String rawAvatar = f.optString("anhDaiDien", f.optString("anhDaiDien_URL", ""));

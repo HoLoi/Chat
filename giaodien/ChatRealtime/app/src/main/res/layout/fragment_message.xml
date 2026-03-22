@@ -39,7 +39,8 @@
                 android:textSize="15sp"
                 android:paddingStart="8dp"
                 android:maxLength="50"
-                android:maxLines="1"/>
+                android:maxLines="1"
+                android:singleLine="true"/>
 
         </LinearLayout>
 

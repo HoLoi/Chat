@@ -242,13 +242,14 @@ public class MessageService {
 
                 String filePath = duongDanFile != null ? duongDanFile : "";
 
+
                 Map<String, String> data = Map.of(
                         "type", "chat_message",
                         "maPhongChat", String.valueOf(roomId),
                         "maTaiKhoanGui", String.valueOf(senderId),
                         "tenNguoiGui", senderName,
                         "anhDaiDienNguoiGui", senderAvatar != null ? senderAvatar : "",
-                        "roomName", roomName,
+                        "roomName", roomName ,
                         "noiDung", resolvedContent,
                         "loaiTinNhan", resolvedType,
                         "duongDanFile", filePath
